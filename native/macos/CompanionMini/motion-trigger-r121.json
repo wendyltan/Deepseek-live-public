@@ -1,0 +1,290 @@
+{
+  "schema": 1,
+  "origin": "verified_R121_source_only",
+  "firmware_source_sha256": "36282c39a5f79ffa81d472d7cced83b45be3875639e0e248191a8f7e68d49af7",
+  "live_binding_can_be_edited_on_R121": false,
+  "historical_count": 35,
+  "auto_triggered_count": 20,
+  "manual_only_count": 15,
+  "trigger_kinds": [
+    {
+      "id": "boot",
+      "description": "开机/返回待机，循环显示",
+      "motion_ids": [
+        "m000"
+      ]
+    },
+    {
+      "id": "tap",
+      "description": "点击循环：m013→m014→m015→m016",
+      "motion_ids": [
+        "m013",
+        "m014",
+        "m015",
+        "m016"
+      ]
+    },
+    {
+      "id": "idle",
+      "description": "空闲约90秒触发，按队列轮换",
+      "motion_ids": [
+        "m002",
+        "m003",
+        "m010",
+        "m011"
+      ]
+    },
+    {
+      "id": "bonus",
+      "description": "空闲彩蛋间隔约15分钟，依次轮换",
+      "motion_ids": [
+        "m061",
+        "m062",
+        "m067",
+        "m083",
+        "m097",
+        "m099",
+        "m105"
+      ]
+    },
+    {
+      "id": "work",
+      "description": "后台核实的工作阶段，约9秒轮换",
+      "motion_ids": [
+        "m024",
+        "m025",
+        "m026",
+        "m027"
+      ]
+    }
+  ],
+  "unbound_selected_ids": [
+    "m001",
+    "m008",
+    "m018",
+    "m019",
+    "m020",
+    "m023",
+    "m028",
+    "m030",
+    "m070",
+    "m071",
+    "m072",
+    "m073",
+    "m075",
+    "m080",
+    "m081"
+  ],
+  "bindings": [
+    {
+      "id": "m000",
+      "device_package_selected": true,
+      "real_trigger": "boot",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m001",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m002",
+      "device_package_selected": true,
+      "real_trigger": "idle",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m003",
+      "device_package_selected": true,
+      "real_trigger": "idle",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m008",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m010",
+      "device_package_selected": true,
+      "real_trigger": "idle",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m011",
+      "device_package_selected": true,
+      "real_trigger": "idle",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m013",
+      "device_package_selected": true,
+      "real_trigger": "tap",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m014",
+      "device_package_selected": true,
+      "real_trigger": "tap",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m015",
+      "device_package_selected": true,
+      "real_trigger": "tap",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m016",
+      "device_package_selected": true,
+      "real_trigger": "tap",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m018",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m019",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m020",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m023",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m024",
+      "device_package_selected": true,
+      "real_trigger": "work",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m025",
+      "device_package_selected": true,
+      "real_trigger": "work",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m026",
+      "device_package_selected": true,
+      "real_trigger": "work",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m027",
+      "device_package_selected": true,
+      "real_trigger": "work",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m028",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m030",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m061",
+      "device_package_selected": true,
+      "real_trigger": "bonus",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m062",
+      "device_package_selected": true,
+      "real_trigger": "bonus",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m067",
+      "device_package_selected": true,
+      "real_trigger": "bonus",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m070",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m071",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m072",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m073",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m075",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m080",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m081",
+      "device_package_selected": true,
+      "real_trigger": "manual",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m083",
+      "device_package_selected": true,
+      "real_trigger": "bonus",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m097",
+      "device_package_selected": true,
+      "real_trigger": "bonus",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m099",
+      "device_package_selected": true,
+      "real_trigger": "bonus",
+      "trigger_configurable_on_device": false
+    },
+    {
+      "id": "m105",
+      "device_package_selected": true,
+      "real_trigger": "bonus",
+      "trigger_configurable_on_device": false
+    }
+  ]
+}

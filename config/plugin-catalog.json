@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "disclaimer": "Curated examples, not a live official marketplace or an endorsement. Verify package provenance, licenses and compatibility before installation.",
+  "items": [
+    {
+      "id": "dsh-better-sidebar",
+      "title": "侧栏扩展",
+      "version": "0.28.2",
+      "source": "npm",
+      "scope": "desktop-ui",
+      "description": "可选的完整 Web DSH 侧栏，不属于大肥鱼对话必需组件",
+      "compatibility": "requires-isolated-react-verification"
+    },
+    {
+      "id": "dsh-ops",
+      "title": "Ops 管理工具",
+      "version": "0.4.4",
+      "source": "npm",
+      "scope": "host-ops",
+      "description": "进阶 Host 管理功能；默认不加入大肥鱼三 Bundle",
+      "compatibility": "unverified-on-minimal-profile"
+    },
+    {
+      "id": "dsh-ops-console",
+      "title": "Ops 控制台",
+      "version": "0.7.3",
+      "source": "local-deployment",
+      "scope": "host-ops",
+      "description": "管理界面扩展；本地旧部署并非可直接公开安装的软件包",
+      "compatibility": "local-only-no-public-install"
+    },
+    {
+      "id": "dsh-slidestudio",
+      "title": "幻灯片创作",
+      "version": "0.2.7",
+      "source": "npm",
+      "scope": "creative",
+      "description": "非大肥鱼实体交互所需，可选创作插件",
+      "compatibility": "unverified-on-minimal-profile"
+    },
+    {
+      "id": "@deepseek-ai/dsh-experimental-plugin-market-bundle",
+      "title": "官方插件市场 Bundle",
+      "version": "0.2.1-rc.2",
+      "source": "npm",
+      "scope": "host-market",
+      "description": "完整 DSH Web 市场 UI；本项目不默认加载，可通过轻量管理页检索",
+      "compatibility": "requires-isolated-testing"
+    }
+  ]
+}

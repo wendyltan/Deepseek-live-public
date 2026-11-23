@@ -1,0 +1,18 @@
+# Deepseek-live owns a minimal official DSH agent preset: only Web tools.
+# It does not inherit standard's filesystem, shell, or remote action tools.
+# This bundle activates only in a profile that explicitly installs it.
+- insert:
+    - id: dsh-live-bridge
+      name: 'dsh-live-bridge'
+    - id: preset-deepseek-live-web
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: deepseek-live-web
+        order: 5
+        plugins:
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              search: true
+              fetch: true
+              searchTimeoutMs: 60000

@@ -1,0 +1,27 @@
+{
+  "name": "dsh-live-bridge",
+  "version": "0.4.6",
+  "private": true,
+  "description": "Independent Deepseek-live adapter to native DeepSeek Harness agents",
+  "type": "module",
+  "main": "lib/index.js",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check lib/companion-facts.js && node --check lib/index.js && node --check lib/persona-runtime.js && node --check lib/persona-growth.js && node --check lib/persona-growth-suggestions.js && node --check lib/mac-readonly.js && node --check lib/memory-readonly.js && node --check lib/session-clock.js && node --check lib/session-bindings.js && node --check lib/manual-memory.js && node --check lib/privacy-maintenance.js && node --test test/*.test.mjs"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-agent": "0.2.0-rc.2",
+    "zod": "^4.6.7"
+  }
+}

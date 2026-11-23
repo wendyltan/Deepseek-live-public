@@ -1,0 +1,10 @@
+# ESP-IDF Component Manager: pinned registry versions
+# Generated from the development board lock and ESP-SR 2.6.0.
+dependencies:
+  idf: "==5.5.5"
+  espressif/cjson: "==1.7.19~2"
+  espressif/dl_fft: "==0.8.0"
+  espressif/esp-dl: "==3.3.14"
+  espressif/esp-sr: "==2.6.0"
+  lvgl/lvgl: "==9.6.0~1"
+  waveshare/esp32_s3_touch_amoled_2_16: "==2.0.1"

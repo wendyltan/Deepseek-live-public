@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "source_model": "Andersen216/dsh-whale-girl-live2d/c_0120",
+  "core_s3": {
+    "width": 320,
+    "height": 240,
+    "preferred_fps": 20,
+    "max_asset_bytes": 2000000
+  },
+  "mouth_parameter": "ParamMouthOpenY",
+  "states": {
+    "idle": {
+      "face": null,
+      "pose": "idle",
+      "yaw": 0,
+      "pitch": 0
+    },
+    "listening": {
+      "face": "星星眼",
+      "pose": "attentive",
+      "yaw": -0.16,
+      "pitch": -0.12
+    },
+    "transcribing": {
+      "face": "问号",
+      "pose": "waiting",
+      "yaw": -0.26,
+      "pitch": 0.13
+    },
+    "thinking": {
+      "face": null,
+      "pose": "pondering",
+      "yaw": 0.2,
+      "pitch": -0.14,
+      "gaze_x": -0.55,
+      "gaze_y": 0.38,
+      "eye_open": 0.94,
+      "indicator": "thought",
+      "sway": 0.3
+    },
+    "tool_pending": {
+      "face": "方眼镜",
+      "pose": "working",
+      "yaw": 0.06,
+      "pitch": 0.18
+    },
+    "approval_pending": {
+      "face": "方眼镜",
+      "pose": "waiting",
+      "yaw": -0.32,
+      "pitch": 0.08,
+      "gaze_x": -0.34,
+      "gaze_y": -0.12,
+      "eye_open": 1.0,
+      "indicator": "approval"
+    },
+    "voice_generating": {
+      "face": null,
+      "pose": "waiting",
+      "yaw": -0.04,
+      "pitch": -0.08,
+      "gaze_x": 0.18,
+      "gaze_y": 0.05,
+      "eye_open": 0.97,
+      "indicator": "voice_preparing"
+    },
+    "speaking": {
+      "face": null,
+      "pose": "speaking",
+      "yaw": 0.03,
+      "pitch": -0.02
+    },
+    "error": {
+      "face": "流汗",
+      "pose": "error",
+      "yaw": -0.18,
+      "pitch": 0.14
+    },
+    "disconnected": {
+      "face": null,
+      "pose": "offline",
+      "yaw": 0,
+      "pitch": 0.38,
+      "eye_open": 0.08,
+      "indicator": "offline"
+    }
+  },
+  "special": {
+    "happy": {
+      "face": "开心兴奋",
+      "pose": "cheer"
+    },
+    "shy": {
+      "face": "脸红",
+      "pose": "bashful"
+    },
+    "irritated": {
+      "face": "生气",
+      "pose": "grumpy"
+    }
+  }
+}

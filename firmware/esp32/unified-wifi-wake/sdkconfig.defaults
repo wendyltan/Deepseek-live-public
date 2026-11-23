@@ -1,0 +1,30 @@
+# Reproducible BSP/SDK configuration for H4; the build itself lives under Tools.
+# Review actual sdkconfig and partitions.csv before any future firmware flash.
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+# CONFIG_SPIRAM_XIP_FROM_PSRAM is not set
+# CONFIG_SPIRAM_FETCH_INSTRUCTIONS is not set
+# CONFIG_SPIRAM_RODATA is not set
+CONFIG_BSP_I2C_NUM=1
+CONFIG_BSP_I2S_NUM=1
+
+# Large readable headings + clear status on 480x480 AMOLED
+CONFIG_LV_FONT_MONTSERRAT_16=y
+CONFIG_LV_FONT_MONTSERRAT_20=y
+CONFIG_LV_FONT_MONTSERRAT_22=y
+
+CONFIG_FATFS_LFN_HEAP=y
+
+CONFIG_LV_FONT_SOURCE_HAN_SANS_SC_14_CJK=y
+
+# R249 WakeNet: reduce compute latency while leaving PSRAM timing unchanged.
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+
+# R250: ESP32-S3 Octal PSRAM80 + performance compile; no model/partition change.
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_COMPILER_OPTIMIZATION_PERF=y

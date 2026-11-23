@@ -1,0 +1,1393 @@
+{
+  "schema": 1,
+  "kind": "advisory_not_firmware_validation",
+  "source": "verified_published_webm_vp9_alpha_8fps",
+  "baselineMotion": "m000",
+  "baselineScale": 0.833,
+  "riskPolicy": {
+    "high": "<=0.52",
+    "review": "0.52-0.63",
+    "normal": ">=0.63"
+  },
+  "count": 106,
+  "motions": [
+    {
+      "id": "m000",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        256,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m001",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.9,
+      "sourceScaleTo240": 0.75,
+      "sourceGlobalCrop": [
+        244,
+        320
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m002",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        248,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.7,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m003",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        244,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.5,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m004",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.99,
+      "sourceScaleTo240": 0.822,
+      "sourceGlobalCrop": [
+        236,
+        292
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.0,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m005",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.79,
+      "sourceScaleTo240": 0.659,
+      "sourceGlobalCrop": [
+        364,
+        340
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.7,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m006",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        280,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m007",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        240,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.5,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m008",
+      "risk": "review",
+      "relativeScaleToIdle": 0.72,
+      "sourceScaleTo240": 0.6,
+      "sourceGlobalCrop": [
+        400,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 15.0,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m009",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.97,
+      "sourceScaleTo240": 0.811,
+      "sourceGlobalCrop": [
+        280,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m010",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        260,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m011",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.92,
+      "sourceScaleTo240": 0.769,
+      "sourceGlobalCrop": [
+        244,
+        312
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.6,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m012",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        240,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 15.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m013",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.92,
+      "sourceScaleTo240": 0.769,
+      "sourceGlobalCrop": [
+        240,
+        312
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m014",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        244,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m015",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.87,
+      "sourceScaleTo240": 0.723,
+      "sourceGlobalCrop": [
+        292,
+        332
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.8,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m016",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.99,
+      "sourceScaleTo240": 0.822,
+      "sourceGlobalCrop": [
+        252,
+        292
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m017",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.91,
+      "sourceScaleTo240": 0.759,
+      "sourceGlobalCrop": [
+        248,
+        316
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m018",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.89,
+      "sourceScaleTo240": 0.741,
+      "sourceGlobalCrop": [
+        264,
+        324
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.2,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m019",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.94,
+      "sourceScaleTo240": 0.779,
+      "sourceGlobalCrop": [
+        260,
+        308
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 10.5,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m020",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        240,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m021",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        244,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 15.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m022",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.94,
+      "sourceScaleTo240": 0.779,
+      "sourceGlobalCrop": [
+        272,
+        308
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m023",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.96,
+      "sourceScaleTo240": 0.8,
+      "sourceGlobalCrop": [
+        284,
+        300
+      ],
+      "framesMeasured": 39,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m024",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.85,
+      "sourceScaleTo240": 0.706,
+      "sourceGlobalCrop": [
+        284,
+        340
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.6,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m025",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.97,
+      "sourceScaleTo240": 0.811,
+      "sourceGlobalCrop": [
+        268,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.5,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m026",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        232,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.5,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m027",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.87,
+      "sourceScaleTo240": 0.723,
+      "sourceGlobalCrop": [
+        308,
+        332
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m028",
+      "risk": "high",
+      "relativeScaleToIdle": 0.61,
+      "sourceScaleTo240": 0.508,
+      "sourceGlobalCrop": [
+        472,
+        300
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 20.3,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m029",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.96,
+      "sourceScaleTo240": 0.8,
+      "sourceGlobalCrop": [
+        244,
+        300
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m030",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        232,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.7,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m031",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        248,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m032",
+      "risk": "review",
+      "relativeScaleToIdle": 0.64,
+      "sourceScaleTo240": 0.536,
+      "sourceGlobalCrop": [
+        448,
+        300
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m033",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        240,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m034",
+      "risk": "high",
+      "relativeScaleToIdle": 0.56,
+      "sourceScaleTo240": 0.465,
+      "sourceGlobalCrop": [
+        516,
+        332
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.6,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m035",
+      "risk": "high",
+      "relativeScaleToIdle": 0.59,
+      "sourceScaleTo240": 0.492,
+      "sourceGlobalCrop": [
+        488,
+        336
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m036",
+      "risk": "high",
+      "relativeScaleToIdle": 0.6,
+      "sourceScaleTo240": 0.5,
+      "sourceGlobalCrop": [
+        480,
+        324
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.0,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m037",
+      "risk": "high",
+      "relativeScaleToIdle": 0.56,
+      "sourceScaleTo240": 0.469,
+      "sourceGlobalCrop": [
+        512,
+        336
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.4,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m038",
+      "risk": "review",
+      "relativeScaleToIdle": 0.71,
+      "sourceScaleTo240": 0.594,
+      "sourceGlobalCrop": [
+        404,
+        300
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 21.5,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m039",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        280,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.3,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m040",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.99,
+      "sourceScaleTo240": 0.822,
+      "sourceGlobalCrop": [
+        240,
+        292
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m041",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        248,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m042",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        236,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m043",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        244,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.4,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m044",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        252,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m045",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        248,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.5,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m046",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        240,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m047",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.88,
+      "sourceScaleTo240": 0.732,
+      "sourceGlobalCrop": [
+        328,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m048",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        240,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.3,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m049",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.95,
+      "sourceScaleTo240": 0.789,
+      "sourceGlobalCrop": [
+        304,
+        300
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m050",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        248,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m051",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.81,
+      "sourceScaleTo240": 0.674,
+      "sourceGlobalCrop": [
+        292,
+        356
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m052",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        240,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.0,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m053",
+      "risk": "high",
+      "relativeScaleToIdle": 0.47,
+      "sourceScaleTo240": 0.39,
+      "sourceGlobalCrop": [
+        616,
+        360
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 22.6,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m054",
+      "risk": "review",
+      "relativeScaleToIdle": 0.69,
+      "sourceScaleTo240": 0.571,
+      "sourceGlobalCrop": [
+        420,
+        340
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 19.5,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m055",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.78,
+      "sourceScaleTo240": 0.652,
+      "sourceGlobalCrop": [
+        368,
+        304
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.7,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m056",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.91,
+      "sourceScaleTo240": 0.759,
+      "sourceGlobalCrop": [
+        260,
+        316
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m057",
+      "risk": "high",
+      "relativeScaleToIdle": 0.57,
+      "sourceScaleTo240": 0.472,
+      "sourceGlobalCrop": [
+        508,
+        328
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 25.4,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m058",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        264,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.7,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m059",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.9,
+      "sourceScaleTo240": 0.75,
+      "sourceGlobalCrop": [
+        272,
+        320
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.3,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m060",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.94,
+      "sourceScaleTo240": 0.779,
+      "sourceGlobalCrop": [
+        256,
+        308
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m061",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.97,
+      "sourceScaleTo240": 0.811,
+      "sourceGlobalCrop": [
+        276,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.8,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m062",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.91,
+      "sourceScaleTo240": 0.759,
+      "sourceGlobalCrop": [
+        248,
+        316
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.6,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m063",
+      "risk": "review",
+      "relativeScaleToIdle": 0.65,
+      "sourceScaleTo240": 0.545,
+      "sourceGlobalCrop": [
+        440,
+        332
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m064",
+      "risk": "high",
+      "relativeScaleToIdle": 0.59,
+      "sourceScaleTo240": 0.492,
+      "sourceGlobalCrop": [
+        488,
+        332
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 23.3,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m065",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.79,
+      "sourceScaleTo240": 0.659,
+      "sourceGlobalCrop": [
+        364,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m066",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        236,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m067",
+      "risk": "review",
+      "relativeScaleToIdle": 0.67,
+      "sourceScaleTo240": 0.556,
+      "sourceGlobalCrop": [
+        432,
+        340
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 15.7,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m068",
+      "risk": "review",
+      "relativeScaleToIdle": 0.69,
+      "sourceScaleTo240": 0.571,
+      "sourceGlobalCrop": [
+        420,
+        324
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.3,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m069",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.99,
+      "sourceScaleTo240": 0.822,
+      "sourceGlobalCrop": [
+        252,
+        292
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m070",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.77,
+      "sourceScaleTo240": 0.645,
+      "sourceGlobalCrop": [
+        372,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.6,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m071",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        244,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m072",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.97,
+      "sourceScaleTo240": 0.811,
+      "sourceGlobalCrop": [
+        264,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.6,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m073",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        240,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m074",
+      "risk": "high",
+      "relativeScaleToIdle": 0.62,
+      "sourceScaleTo240": 0.513,
+      "sourceGlobalCrop": [
+        468,
+        292
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 23.0,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m075",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        252,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.0,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m076",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        248,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m077",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.9,
+      "sourceScaleTo240": 0.75,
+      "sourceGlobalCrop": [
+        272,
+        320
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.4,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m078",
+      "risk": "high",
+      "relativeScaleToIdle": 0.48,
+      "sourceScaleTo240": 0.397,
+      "sourceGlobalCrop": [
+        604,
+        336
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.0,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m079",
+      "risk": "high",
+      "relativeScaleToIdle": 0.6,
+      "sourceScaleTo240": 0.496,
+      "sourceGlobalCrop": [
+        484,
+        328
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m080",
+      "risk": "high",
+      "relativeScaleToIdle": 0.5,
+      "sourceScaleTo240": 0.42,
+      "sourceGlobalCrop": [
+        572,
+        328
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.6,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m081",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.99,
+      "sourceScaleTo240": 0.822,
+      "sourceGlobalCrop": [
+        236,
+        292
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.6,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m082",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.96,
+      "sourceScaleTo240": 0.8,
+      "sourceGlobalCrop": [
+        296,
+        300
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m083",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.83,
+      "sourceScaleTo240": 0.69,
+      "sourceGlobalCrop": [
+        348,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.5,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m084",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        272,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m085",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.88,
+      "sourceScaleTo240": 0.732,
+      "sourceGlobalCrop": [
+        264,
+        328
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.0,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m086",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.97,
+      "sourceScaleTo240": 0.811,
+      "sourceGlobalCrop": [
+        288,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m087",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.88,
+      "sourceScaleTo240": 0.732,
+      "sourceGlobalCrop": [
+        328,
+        312
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.3,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m088",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.88,
+      "sourceScaleTo240": 0.732,
+      "sourceGlobalCrop": [
+        328,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m089",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        248,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m090",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.96,
+      "sourceScaleTo240": 0.8,
+      "sourceGlobalCrop": [
+        300,
+        296
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.4,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m091",
+      "risk": "high",
+      "relativeScaleToIdle": 0.5,
+      "sourceScaleTo240": 0.42,
+      "sourceGlobalCrop": [
+        572,
+        304
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 28.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m092",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.95,
+      "sourceScaleTo240": 0.789,
+      "sourceGlobalCrop": [
+        260,
+        304
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.5,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m093",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.96,
+      "sourceScaleTo240": 0.8,
+      "sourceGlobalCrop": [
+        252,
+        300
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.7,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m094",
+      "risk": "high",
+      "relativeScaleToIdle": 0.5,
+      "sourceScaleTo240": 0.417,
+      "sourceGlobalCrop": [
+        576,
+        304
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m095",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.95,
+      "sourceScaleTo240": 0.789,
+      "sourceGlobalCrop": [
+        296,
+        304
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.8,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m096",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.0,
+      "sourceScaleTo240": 0.833,
+      "sourceGlobalCrop": [
+        276,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.7,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m097",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.87,
+      "sourceScaleTo240": 0.723,
+      "sourceGlobalCrop": [
+        304,
+        332
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 18.7,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m098",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.83,
+      "sourceScaleTo240": 0.69,
+      "sourceGlobalCrop": [
+        348,
+        308
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.9,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m099",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.77,
+      "sourceScaleTo240": 0.645,
+      "sourceGlobalCrop": [
+        372,
+        312
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.4,
+      "selectedAtAudit": true
+    },
+    {
+      "id": "m100",
+      "risk": "high",
+      "relativeScaleToIdle": 0.45,
+      "sourceScaleTo240": 0.375,
+      "sourceGlobalCrop": [
+        640,
+        344
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 21.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m101",
+      "risk": "normal",
+      "relativeScaleToIdle": 1.01,
+      "sourceScaleTo240": 0.845,
+      "sourceGlobalCrop": [
+        280,
+        284
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 16.6,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m102",
+      "risk": "high",
+      "relativeScaleToIdle": 0.48,
+      "sourceScaleTo240": 0.403,
+      "sourceGlobalCrop": [
+        596,
+        336
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.1,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m103",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.97,
+      "sourceScaleTo240": 0.811,
+      "sourceGlobalCrop": [
+        296,
+        288
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.2,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m104",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.8,
+      "sourceScaleTo240": 0.667,
+      "sourceGlobalCrop": [
+        360,
+        352
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 27.4,
+      "selectedAtAudit": false
+    },
+    {
+      "id": "m105",
+      "risk": "normal",
+      "relativeScaleToIdle": 0.86,
+      "sourceScaleTo240": 0.714,
+      "sourceGlobalCrop": [
+        336,
+        316
+      ],
+      "framesMeasured": 80,
+      "sourceAlphaMedianPercent": 17.3,
+      "selectedAtAudit": true
+    }
+  ]
+}

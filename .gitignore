@@ -1,0 +1,261 @@
+# Sensitive local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+secrets/
+credentials/
+
+# Private source footage, derived frames, model source and user feedback
+research/private-audio/
+research/private-video/
+research/private-visual/
+research/raw-media/
+assets/third-party-unlicensed/
+
+# Local P1 outputs, project-only environments and machine-specific caches
+app/runtime/
+.venv/
+.venv*/
+# Local venv compatibility link after dependency relocation (a symlink is not a directory)
+/.venv-p2-ws
+venv/
+venv*/
+node_modules/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.coverage
+.coverage.*
+*.pyc
+*.pyo
+*.pyd
+*.sqlite
+*.sqlite3
+*.db
+
+# Scratch outputs (keep real research and tests in their named tracked paths)
+.tmp/
+tmp/
+temp/
+test-results/
+playwright-report/
+coverage/
+local-output/
+downloads/
+dist/
+build/
+*.log
+*.pid
+*.tmp
+*.temp
+*.swp
+*.swo
+*.part
+*.crdownload
+*.download
+
+# Generated multimedia must be reviewed separately before any Git publish
+*.wav
+*.m4a
+*.mp3
+*.mp4
+*.mov
+*.webm
+*.mkv
+
+# OS and editor local files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+# Private user memory, device discovery receipts and machine-only SDK links
+/MEMORY.md
+/docs/R187_LAN_*.json
+/docs/R187_MDNS_*.json
+/docs/R187_MIJIA_LAN_INVENTORY_READONLY_*.md
+/firmware/esp32/r1-board-lvgl-smoke/managed_components
+
+# R236 private on-device Mac growth + manual consent state (never commit)
+/private-runtime/
+
+# R696: keep personal materials/private source clips out of Git by default.
+# Opt-in published runtime assets only through explicitly reviewed paths.
+# Git ignore does NOT remove already tracked files from history/index.
+*.flac
+*.opus
+*.ogg
+*.aac
+*.aif
+*.aiff
+*.caf
+*.pcm
+*.raw
+*.gif
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.bmp
+*.tif
+*.tiff
+*.svg
+*.dfs
+*.dfsp
+ANIM.DFS*
+*.safetensors
+*.gguf
+*.ggml
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.h5
+*.npz
+*.npy
+*.mlmodel
+*.mlpackage/
+*.bin
+*.elf
+*.uf2
+*.hex
+*.img
+*.dmg
+*.ipa
+*.apk
+*.aab
+*.xcarchive/
+*.xcresult/
+*.app/
+*.framework/
+*.dSYM/
+*.coredump
+*.core
+
+# Any user sessions, unreviewed audio, model caches, device identity or
+# generated experimentation stay private irrespective of file extension.
+**/private-audio/
+**/private-video/
+**/private-visual/
+**/private-media/
+**/private-data/
+**/private-models/
+**/voice-clones/
+**/voice-references/
+**/speaker-embeddings/
+**/recordings/
+**/audio-recordings/
+**/session-dumps/
+**/session-data/
+**/session-exports/
+**/memory-data/
+**/personal-data/
+**/personal-notes/
+**/device-backups/
+**/firmware-backups/
+**/credential-dumps/
+**/keychains/
+**/signed-artifacts/
+**/model-weights/
+**/checkpoints/
+**/snapshots/
+**/screen-captures/
+**/screenshots/
+**/captures/
+**/exports/
+**/generated/
+**/generated-assets/
+**/generated-media/
+**/temp-assets/
+*.jsonl
+*.jsonl.*
+*.ndjson
+*.parquet
+*.arrow
+*.feather
+*.sqlite-*
+*.db-*
+*.rdb
+*.dump
+*.trace
+*.prof
+*.profraw
+*.profdata
+
+# Media included in documentation and the ESP32 build must be specifically
+# authorized. Whitelist the build-time WAV files (not the whole media tree).
+/docs/assets/*
+!/docs/assets/deepseek-live-icon.png
+/firmware/esp32/**/main/assets/*
+# Firmware prompts (VOICE.WAV, R185_GREETING.WAV) are required locally but
+# not yet covered by the specific R503 video-voice source attestation.
+# Keep them ignored until their own provenance is separately approved.
+
+# Explicit release-assets path: only selected, rights-cleared voice fixtures
+# may be made public. Research/private audio stays ignored.
+/release-assets/voice/*
+!/release-assets/voice/README.md
+# R503 reference WAV: original video is licensed (owner attestation);
+# select ONLY this approved final sample for source control.
+!/release-assets/voice/r503-reference.wav
+!/release-assets/voice/r503-reference.txt
+# Non-build artifacts from prior LVGL font previews and agent design runs.
+# Current r487 font sources remain tracked and available for real builds.
+/docs/superpowers/
+/firmware/esp32/unified-wifi-wake/main/lv_font_r486_cn_*.c
+
+# Private local code signing and host-specific configs.
+*.p8
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+*.provisionprofile
+*.age
+*.kdbx
+*.secret
+*.secrets
+*.token
+*.tokens
+*.credentials
+*.credential
+id_rsa
+id_ed25519
+id_ecdsa
+*.keychain
+*.keychain-db
+.dsh/
+.huggingface/
+.cache/
+.mlx/
+.torch/
+.pinky/
+.envrc
+.env.local*
+*credentials.local*
+*secrets.local*
+*tokens.local*
+*_private.local.*
+managed_components/
+sdkconfig.local
+sdkconfig.override
+/firmware/esp32/**/sdkconfig.old
+/firmware/esp32/**/sdkconfig.backup
+
+# Audited source-release media only. All other user files remain ignored.
+!/docs/assets/mac-app-public.png
+!/docs/assets/mac-floating-pet.png
+!/docs/assets/mac-center-overview.png
+!/docs/assets/mac-center-conversations.png
+!/docs/assets/esp32-ui-overview.png
+!/docs/assets/dafeiyu-promo-preview.gif
+!/firmware/esp32/unified-wifi-wake/main/assets/ANIM.DFS
+!/firmware/esp32/unified-wifi-wake/main/assets/VOICE.WAV
+!/firmware/esp32/unified-wifi-wake/main/assets/R185_GREETING.WAV
+/SOURCE_SCOPE.json

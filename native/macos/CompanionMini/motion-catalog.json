@@ -1,0 +1,855 @@
+{
+  "schema": 1,
+  "count": 106,
+  "selectedCount": 35,
+  "motions": [
+    {
+      "id": "m000",
+      "name": "待机呼吸休闲",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m000.jpg",
+      "framesName": "M000.DFS"
+    },
+    {
+      "id": "m001",
+      "name": "原地小憩沉眠",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m001.jpg",
+      "framesName": "M001.DFS"
+    },
+    {
+      "id": "m002",
+      "name": "东张西望",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m002.jpg",
+      "framesName": "M002.DFS"
+    },
+    {
+      "id": "m003",
+      "name": "哈欠连天",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m003.jpg",
+      "framesName": "M003.DFS"
+    },
+    {
+      "id": "m004",
+      "name": "超大伸懒腰",
+      "category": "idle",
+      "inCurrentPackage": false,
+      "previewName": "m004.jpg",
+      "framesName": "M004.DFS"
+    },
+    {
+      "id": "m005",
+      "name": "悠闲哼歌",
+      "category": "idle",
+      "inCurrentPackage": false,
+      "previewName": "m005.jpg",
+      "framesName": "M005.DFS"
+    },
+    {
+      "id": "m006",
+      "name": "原地专心玩魔方",
+      "category": "idle",
+      "inCurrentPackage": false,
+      "previewName": "m006.jpg",
+      "framesName": "M006.DFS"
+    },
+    {
+      "id": "m007",
+      "name": "撸猫",
+      "category": "idle",
+      "inCurrentPackage": false,
+      "previewName": "m007.jpg",
+      "framesName": "M007.DFS"
+    },
+    {
+      "id": "m008",
+      "name": "原地蹲下玩玩具汽车",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m008.jpg",
+      "framesName": "M008.DFS"
+    },
+    {
+      "id": "m009",
+      "name": "照镜子",
+      "category": "idle",
+      "inCurrentPackage": false,
+      "previewName": "m009.jpg",
+      "framesName": "M009.DFS"
+    },
+    {
+      "id": "m010",
+      "name": "轻快记录",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m010.jpg",
+      "framesName": "M010.DFS"
+    },
+    {
+      "id": "m011",
+      "name": "三球抛接",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m011.jpg",
+      "framesName": "M011.DFS"
+    },
+    {
+      "id": "m012",
+      "name": "点击回应-傲娇生气",
+      "category": "reaction",
+      "inCurrentPackage": false,
+      "previewName": "m012.jpg",
+      "framesName": "M012.DFS"
+    },
+    {
+      "id": "m013",
+      "name": "点击回应-元气挥手",
+      "category": "reaction",
+      "inCurrentPackage": true,
+      "previewName": "m013.jpg",
+      "framesName": "M013.DFS"
+    },
+    {
+      "id": "m014",
+      "name": "点击回应-害羞惊讶",
+      "category": "reaction",
+      "inCurrentPackage": true,
+      "previewName": "m014.jpg",
+      "framesName": "M014.DFS"
+    },
+    {
+      "id": "m015",
+      "name": "点击回应-开心跃动",
+      "category": "reaction",
+      "inCurrentPackage": true,
+      "previewName": "m015.jpg",
+      "framesName": "M015.DFS"
+    },
+    {
+      "id": "m016",
+      "name": "点击回应-挠痒咯咯笑",
+      "category": "reaction",
+      "inCurrentPackage": true,
+      "previewName": "m016.jpg",
+      "framesName": "M016.DFS"
+    },
+    {
+      "id": "m017",
+      "name": "被吓一跳",
+      "category": "reaction",
+      "inCurrentPackage": false,
+      "previewName": "m017.jpg",
+      "framesName": "M017.DFS"
+    },
+    {
+      "id": "m018",
+      "name": "被鼠标拖拽悬空反馈",
+      "category": "reaction",
+      "inCurrentPackage": true,
+      "previewName": "m018.jpg",
+      "framesName": "M018.DFS"
+    },
+    {
+      "id": "m019",
+      "name": "原地重力下蹲压缩",
+      "category": "reaction",
+      "inCurrentPackage": true,
+      "previewName": "m019.jpg",
+      "framesName": "M019.DFS"
+    },
+    {
+      "id": "m020",
+      "name": "写代码",
+      "category": "work",
+      "inCurrentPackage": true,
+      "previewName": "m020.jpg",
+      "framesName": "M020.DFS"
+    },
+    {
+      "id": "m021",
+      "name": "原地敲击桌面互动",
+      "category": "work",
+      "inCurrentPackage": false,
+      "previewName": "m021.jpg",
+      "framesName": "M021.DFS"
+    },
+    {
+      "id": "m022",
+      "name": "工作状态-原地踱步张望",
+      "category": "work",
+      "inCurrentPackage": false,
+      "previewName": "m022.jpg",
+      "framesName": "M022.DFS"
+    },
+    {
+      "id": "m023",
+      "name": "工作状态-垂头叹气冒汗",
+      "category": "work",
+      "inCurrentPackage": true,
+      "previewName": "m023.jpg",
+      "framesName": "M023.DFS"
+    },
+    {
+      "id": "m024",
+      "name": "工作状态-忙碌点按",
+      "category": "work",
+      "inCurrentPackage": true,
+      "previewName": "m024.jpg",
+      "framesName": "M024.DFS"
+    },
+    {
+      "id": "m025",
+      "name": "工作状态-思考冒泡",
+      "category": "work",
+      "inCurrentPackage": true,
+      "previewName": "m025.jpg",
+      "framesName": "M025.DFS"
+    },
+    {
+      "id": "m026",
+      "name": "工作状态-清点归档",
+      "category": "work",
+      "inCurrentPackage": true,
+      "previewName": "m026.jpg",
+      "framesName": "M026.DFS"
+    },
+    {
+      "id": "m027",
+      "name": "工作状态-雀跃庆祝",
+      "category": "work",
+      "inCurrentPackage": true,
+      "previewName": "m027.jpg",
+      "framesName": "M027.DFS"
+    },
+    {
+      "id": "m028",
+      "name": "深度思考碎碎念",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m028.jpg",
+      "framesName": "M028.DFS"
+    },
+    {
+      "id": "m029",
+      "name": "碎碎念-发呆碎碎念",
+      "category": "work",
+      "inCurrentPackage": false,
+      "previewName": "m029.jpg",
+      "framesName": "M029.DFS"
+    },
+    {
+      "id": "m030",
+      "name": "碎碎念-对屏碎碎念",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m030.jpg",
+      "framesName": "M030.DFS"
+    },
+    {
+      "id": "m031",
+      "name": "碎碎念-擦桌碎碎念",
+      "category": "work",
+      "inCurrentPackage": false,
+      "previewName": "m031.jpg",
+      "framesName": "M031.DFS"
+    },
+    {
+      "id": "m032",
+      "name": "余额-分文不剩",
+      "category": "special",
+      "inCurrentPackage": false,
+      "previewName": "m032.jpg",
+      "framesName": "M032.DFS"
+    },
+    {
+      "id": "m033",
+      "name": "余额-数金皱眉",
+      "category": "special",
+      "inCurrentPackage": false,
+      "previewName": "m033.jpg",
+      "framesName": "M033.DFS"
+    },
+    {
+      "id": "m034",
+      "name": "余额-袋空如洗",
+      "category": "special",
+      "inCurrentPackage": false,
+      "previewName": "m034.jpg",
+      "framesName": "M034.DFS"
+    },
+    {
+      "id": "m035",
+      "name": "余额-金袋叮当",
+      "category": "special",
+      "inCurrentPackage": false,
+      "previewName": "m035.jpg",
+      "framesName": "M035.DFS"
+    },
+    {
+      "id": "m036",
+      "name": "余额-钱袋如常",
+      "category": "special",
+      "inCurrentPackage": false,
+      "previewName": "m036.jpg",
+      "framesName": "M036.DFS"
+    },
+    {
+      "id": "m037",
+      "name": "余额-钱袋满溢",
+      "category": "special",
+      "inCurrentPackage": false,
+      "previewName": "m037.jpg",
+      "framesName": "M037.DFS"
+    },
+    {
+      "id": "m038",
+      "name": "中秋赏月吃月饼",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m038.jpg",
+      "framesName": "M038.DFS"
+    },
+    {
+      "id": "m039",
+      "name": "写福字",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m039.jpg",
+      "framesName": "M039.DFS"
+    },
+    {
+      "id": "m040",
+      "name": "吃冰淇淋融化",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m040.jpg",
+      "framesName": "M040.DFS"
+    },
+    {
+      "id": "m041",
+      "name": "吃年糕",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m041.jpg",
+      "framesName": "M041.DFS"
+    },
+    {
+      "id": "m042",
+      "name": "吃汤圆",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m042.jpg",
+      "framesName": "M042.DFS"
+    },
+    {
+      "id": "m043",
+      "name": "吃粽子",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m043.jpg",
+      "framesName": "M043.DFS"
+    },
+    {
+      "id": "m044",
+      "name": "吃糖葫芦",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m044.jpg",
+      "framesName": "M044.DFS"
+    },
+    {
+      "id": "m045",
+      "name": "吃西瓜",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m045.jpg",
+      "framesName": "M045.DFS"
+    },
+    {
+      "id": "m046",
+      "name": "吃重阳糕",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m046.jpg",
+      "framesName": "M046.DFS"
+    },
+    {
+      "id": "m047",
+      "name": "吃长寿面",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m047.jpg",
+      "framesName": "M047.DFS"
+    },
+    {
+      "id": "m048",
+      "name": "吃青团",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m048.jpg",
+      "framesName": "M048.DFS"
+    },
+    {
+      "id": "m049",
+      "name": "堆雪人",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m049.jpg",
+      "framesName": "M049.DFS"
+    },
+    {
+      "id": "m050",
+      "name": "插茱萸赏菊",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m050.jpg",
+      "framesName": "M050.DFS"
+    },
+    {
+      "id": "m051",
+      "name": "放孔明灯",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m051.jpg",
+      "framesName": "M051.DFS"
+    },
+    {
+      "id": "m052",
+      "name": "放河灯",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m052.jpg",
+      "framesName": "M052.DFS"
+    },
+    {
+      "id": "m053",
+      "name": "放烟花",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m053.jpg",
+      "framesName": "M053.DFS"
+    },
+    {
+      "id": "m054",
+      "name": "放风筝",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m054.jpg",
+      "framesName": "M054.DFS"
+    },
+    {
+      "id": "m055",
+      "name": "穿针乞巧",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m055.jpg",
+      "framesName": "M055.DFS"
+    },
+    {
+      "id": "m056",
+      "name": "舞狮头",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m056.jpg",
+      "framesName": "M056.DFS"
+    },
+    {
+      "id": "m057",
+      "name": "装点圣诞树",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m057.jpg",
+      "framesName": "M057.DFS"
+    },
+    {
+      "id": "m058",
+      "name": "讨糖南瓜灯",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m058.jpg",
+      "framesName": "M058.DFS"
+    },
+    {
+      "id": "m059",
+      "name": "踢毽子",
+      "category": "seasonal",
+      "inCurrentPackage": false,
+      "previewName": "m059.jpg",
+      "framesName": "M059.DFS"
+    },
+    {
+      "id": "m060",
+      "name": "下五子棋",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m060.jpg",
+      "framesName": "M060.DFS"
+    },
+    {
+      "id": "m061",
+      "name": "优雅女仆舞",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m061.jpg",
+      "framesName": "M061.DFS"
+    },
+    {
+      "id": "m062",
+      "name": "偷吃零食被抓住",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m062.jpg",
+      "framesName": "M062.DFS"
+    },
+    {
+      "id": "m063",
+      "name": "凭空生花",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m063.jpg",
+      "framesName": "M063.DFS"
+    },
+    {
+      "id": "m064",
+      "name": "动物环绕",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m064.jpg",
+      "framesName": "M064.DFS"
+    },
+    {
+      "id": "m065",
+      "name": "原地左转奔跑",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m065.jpg",
+      "framesName": "M065.DFS"
+    },
+    {
+      "id": "m066",
+      "name": "原地漂浮踏步",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m066.jpg",
+      "framesName": "M066.DFS"
+    },
+    {
+      "id": "m067",
+      "name": "原地跳跃抓碎头顶物品",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m067.jpg",
+      "framesName": "M067.DFS"
+    },
+    {
+      "id": "m068",
+      "name": "变鸽子",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m068.jpg",
+      "framesName": "M068.DFS"
+    },
+    {
+      "id": "m069",
+      "name": "可爱宅舞",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m069.jpg",
+      "framesName": "M069.DFS"
+    },
+    {
+      "id": "m070",
+      "name": "吃Token",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m070.jpg",
+      "framesName": "M070.DFS"
+    },
+    {
+      "id": "m071",
+      "name": "吃午餐",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m071.jpg",
+      "framesName": "M071.DFS"
+    },
+    {
+      "id": "m072",
+      "name": "吃大闸蟹",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m072.jpg",
+      "framesName": "M072.DFS"
+    },
+    {
+      "id": "m073",
+      "name": "吃早餐",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m073.jpg",
+      "framesName": "M073.DFS"
+    },
+    {
+      "id": "m074",
+      "name": "吃晚餐",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m074.jpg",
+      "framesName": "M074.DFS"
+    },
+    {
+      "id": "m075",
+      "name": "吃白饭",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m075.jpg",
+      "framesName": "M075.DFS"
+    },
+    {
+      "id": "m076",
+      "name": "吃腊八粥",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m076.jpg",
+      "framesName": "M076.DFS"
+    },
+    {
+      "id": "m077",
+      "name": "吃饺子",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m077.jpg",
+      "framesName": "M077.DFS"
+    },
+    {
+      "id": "m078",
+      "name": "吹气球",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m078.jpg",
+      "framesName": "M078.DFS"
+    },
+    {
+      "id": "m079",
+      "name": "吹笛子",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m079.jpg",
+      "framesName": "M079.DFS"
+    },
+    {
+      "id": "m080",
+      "name": "大口吃零食",
+      "category": "idle",
+      "inCurrentPackage": true,
+      "previewName": "m080.jpg",
+      "framesName": "M080.DFS"
+    },
+    {
+      "id": "m081",
+      "name": "女仆屈膝礼仪",
+      "category": "reaction",
+      "inCurrentPackage": true,
+      "previewName": "m081.jpg",
+      "framesName": "M081.DFS"
+    },
+    {
+      "id": "m082",
+      "name": "小幅度原地360度旋转展示",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m082.jpg",
+      "framesName": "M082.DFS"
+    },
+    {
+      "id": "m083",
+      "name": "小提琴演奏",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m083.jpg",
+      "framesName": "M083.DFS"
+    },
+    {
+      "id": "m084",
+      "name": "扑克魔术",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m084.jpg",
+      "framesName": "M084.DFS"
+    },
+    {
+      "id": "m085",
+      "name": "打瞌睡被惊醒",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m085.jpg",
+      "framesName": "M085.DFS"
+    },
+    {
+      "id": "m086",
+      "name": "抽陀螺",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m086.jpg",
+      "framesName": "M086.DFS"
+    },
+    {
+      "id": "m087",
+      "name": "拆礼物",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m087.jpg",
+      "framesName": "M087.DFS"
+    },
+    {
+      "id": "m088",
+      "name": "摇扇纳凉",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m088.jpg",
+      "framesName": "M088.DFS"
+    },
+    {
+      "id": "m089",
+      "name": "收红包",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m089.jpg",
+      "framesName": "M089.DFS"
+    },
+    {
+      "id": "m090",
+      "name": "整体换装试色",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m090.jpg",
+      "framesName": "M090.DFS"
+    },
+    {
+      "id": "m091",
+      "name": "是啊，吃什么",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m091.jpg",
+      "framesName": "M091.DFS"
+    },
+    {
+      "id": "m092",
+      "name": "晨间刷牙",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m092.jpg",
+      "framesName": "M092.DFS"
+    },
+    {
+      "id": "m093",
+      "name": "涮火锅",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m093.jpg",
+      "framesName": "M093.DFS"
+    },
+    {
+      "id": "m094",
+      "name": "玩水枪",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m094.jpg",
+      "framesName": "M094.DFS"
+    },
+    {
+      "id": "m095",
+      "name": "玩游戏气急败坏",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m095.jpg",
+      "framesName": "M095.DFS"
+    },
+    {
+      "id": "m096",
+      "name": "用鲸鱼尾巴拍打地面",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m096.jpg",
+      "framesName": "M096.DFS"
+    },
+    {
+      "id": "m097",
+      "name": "荡秋千",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m097.jpg",
+      "framesName": "M097.DFS"
+    },
+    {
+      "id": "m098",
+      "name": "萌化小幽灵",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m098.jpg",
+      "framesName": "M098.DFS"
+    },
+    {
+      "id": "m099",
+      "name": "蓝鲸现世",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m099.jpg",
+      "framesName": "M099.DFS"
+    },
+    {
+      "id": "m100",
+      "name": "蝴蝶蜜蜂环绕头顶开花",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m100.jpg",
+      "framesName": "M100.DFS"
+    },
+    {
+      "id": "m101",
+      "name": "螃蟹走路",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m101.jpg",
+      "framesName": "M101.DFS"
+    },
+    {
+      "id": "m102",
+      "name": "被落叶淹没",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m102.jpg",
+      "framesName": "M102.DFS"
+    },
+    {
+      "id": "m103",
+      "name": "轻快摇摆舞",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m103.jpg",
+      "framesName": "M103.DFS"
+    },
+    {
+      "id": "m104",
+      "name": "骑木马",
+      "category": "other",
+      "inCurrentPackage": false,
+      "previewName": "m104.jpg",
+      "framesName": "M104.DFS"
+    },
+    {
+      "id": "m105",
+      "name": "鲸鱼吐泡泡特效",
+      "category": "bonus",
+      "inCurrentPackage": true,
+      "previewName": "m105.jpg",
+      "framesName": "M105.DFS"
+    }
+  ]
+}
