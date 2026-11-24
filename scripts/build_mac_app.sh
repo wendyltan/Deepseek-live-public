@@ -16,6 +16,8 @@ fi
 
 sources=(
   CompanionProjectPaths.swift CompanionModels.swift CompanionStore.swift main.swift CompanionManagementCenter.swift
+  CompanionPreferencesView.swift CompanionServiceControlsView.swift CompanionSpokenHistory.swift CompanionManagementConversation.swift
+  CompanionComputerApproval.swift
   MemoryOverviewSheet.swift PersonaOverviewSheet.swift WiFiGatewayStatusView.swift
   BridgeGrowthReviewSheet.swift ConversationContextSheet.swift
   ReadableMarkdownView.swift VoicePreprocessorSettingsView.swift

@@ -9,12 +9,36 @@ from urllib.parse import urlsplit, unquote
 # Explicit opt-in portability for fresh Macs; defaults preserve the
 # currently accepted R503 model and reference audio on the author Mac.
 PROJECT_ROOT=Path(__file__).resolve().parents[1]
+TOOLS_ROOT=Path(os.environ.get("DAFEIYU_TOOLS_ROOT", str(PROJECT_ROOT.parent.parent / "Tools")))
 _LEGACY_REF=Path.home()/"Library/Application Support/Deepseek-live/voice-r503-production/r644/reference.wav"
 _BUNDLED_REF=PROJECT_ROOT/"release-assets/voice/r503-reference.wav"
-ROOT=Path(os.environ.get("DAFEIYU_R503_LAB_ROOT",
-    "./app/runtime/voice-agent-lab"))
-MODEL=Path(os.environ.get("DAFEIYU_R503_MODEL_DIR",
-    "./app/runtime/models/Qwen3-TTS-12Hz-0.6B-Base-8bit"))
+
+
+def _pick_dir(env_key: str, primary: Path, *fallbacks: Path) -> Path:
+    configured = os.environ.get(env_key, "").strip()
+    if configured:
+        return Path(configured).expanduser()
+    for candidate in (primary, *fallbacks):
+        if candidate.exists():
+            return candidate
+    return primary
+
+
+_MODEL_NAME = "Qwen3-TTS-12Hz-0.6B-Base-8bit"
+_TOOL_MODEL_CANDIDATES = [
+    TOOLS_ROOT / "models" / _MODEL_NAME,
+    *(sorted(TOOLS_ROOT.glob(f"*/models/{_MODEL_NAME}")) if TOOLS_ROOT.is_dir() else []),
+]
+ROOT=_pick_dir(
+    "DAFEIYU_R503_LAB_ROOT",
+    PROJECT_ROOT / "app/runtime/voice-agent-lab",
+    TOOLS_ROOT / "voice-agent-lab",
+)
+MODEL=_pick_dir(
+    "DAFEIYU_R503_MODEL_DIR",
+    PROJECT_ROOT / "app/runtime/models" / _MODEL_NAME,
+    *_TOOL_MODEL_CANDIDATES,
+)
 REFERENCE=Path(os.environ.get("DAFEIYU_R503_REFERENCE_AUDIO",
     str(_LEGACY_REF if _LEGACY_REF.is_file() else _BUNDLED_REF)))
 # R644 release: exactly the R470 approved reference transcript; no import

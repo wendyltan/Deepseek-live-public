@@ -466,9 +466,8 @@ final class CompanionStore: ObservableObject {
     private nonisolated static func runConnectionManager(_ action:String = "all")
         -> (Bool,String,CompanionServiceStatus?) {
         let tool=Process()
-        tool.executableURL=URL(fileURLWithPath:"/opt/homebrew/bin/python3.12")
-        tool.arguments=[FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/Deepseek-live/companion-native/r109_service_manager.py").path,action]
+        tool.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
+        tool.arguments=[CompanionProjectPaths.script("companion_cli.py"),"connection",action]
         let pipe=Pipe()
         tool.standardOutput=pipe
         tool.standardError=Pipe()

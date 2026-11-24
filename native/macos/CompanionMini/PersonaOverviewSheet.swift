@@ -59,19 +59,19 @@ final class PersonaOverviewModel: ObservableObject {
     @Published private(set) var saving = false
 
     private static var root:URL {CompanionProjectPaths.rootURL}
-    private static let script = root.appendingPathComponent("scripts/r310_persona_editor.mjs")
+    private static let script = root.appendingPathComponent("scripts/companion_cli.py")
 
     private func request(_ action:String, draft:String? = nil,
                          expectedSHA:String? = nil)->PersonaEditorReceipt? {
         guard ["status","save"].contains(action),
               FileManager.default.fileExists(atPath:Self.script.path),
-              FileManager.default.fileExists(atPath:"/opt/homebrew/bin/node") else {
+              FileManager.default.isExecutableFile(atPath:CompanionProjectPaths.python) else {
             notice="正式人设编辑程序暂不可用，未修改任何文件。"
             return nil
         }
         let task=Process(), input=Pipe(), output=Pipe()
-        task.executableURL=URL(fileURLWithPath:"/opt/homebrew/bin/node")
-        task.arguments=[Self.script.path,action]
+        task.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
+        task.arguments=[Self.script.path,"persona",CompanionProjectPaths.node,action]
         task.currentDirectoryURL=Self.root
         task.standardInput=input
         task.standardOutput=output

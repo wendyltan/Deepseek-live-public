@@ -25,13 +25,13 @@ private final class WhaleGrowthReviewModel: ObservableObject {
                                          payload: [String:Any] = [:]) -> [String:Any]? {
         let sourceRoot = CompanionProjectPaths.rootURL.path
         let script = URL(fileURLWithPath: sourceRoot)
-            .appendingPathComponent("scripts/r235_native_growth_review.mjs")
+            .appendingPathComponent("scripts/companion_cli.py")
         guard FileManager.default.fileExists(atPath: script.path),
               let inputData = try? JSONSerialization.data(withJSONObject: [
                   "action": action, "payload": payload]) else {return nil}
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/node")
-        task.arguments = [script.path]
+        task.executableURL = URL(fileURLWithPath: CompanionProjectPaths.python)
+        task.arguments = [script.path,"growth",CompanionProjectPaths.node]
         task.currentDirectoryURL = URL(fileURLWithPath: sourceRoot)
         let input = Pipe()
         let output = Pipe()

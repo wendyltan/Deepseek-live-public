@@ -6,7 +6,7 @@
 import Foundation
 
 enum CompanionProjectPaths {
-    private static let managerScript = "scripts/r659_plugin_manager.py"
+    private static let managerScript = "scripts/companion_cli.py"
 
     private static func projectExists(_ url: URL) -> Bool {
         let fm=FileManager.default
@@ -63,11 +63,22 @@ enum CompanionProjectPaths {
         return rootURL.deletingLastPathComponent()
             .deletingLastPathComponent().appendingPathComponent("Tools")
     }
-    static var python:String {
-        if let v=ProcessInfo.processInfo.environment["DAFEIYU_PYTHON"],
-           !v.isEmpty {return v}
-        return "/opt/homebrew/bin/python3.12"
+    private static func executable(override key: String, names: [String]) -> String {
+        let environment = ProcessInfo.processInfo.environment
+        if let value = environment[key], !value.isEmpty {
+            return (value as NSString).expandingTildeInPath
+        }
+        let fallbackDirectories = ["/opt/homebrew/bin/", "/usr/local/bin/"]
+        let pathDirectories = (environment["PATH"] ?? "").split(separator: ":").map(String.init)
+        let candidates = (pathDirectories + fallbackDirectories).flatMap { directory in
+            names.map { URL(fileURLWithPath: directory, isDirectory: true).appendingPathComponent($0).path }
+        }
+        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
+            ?? fallbackDirectories[0] + names[0]
     }
+
+    static var node: String { executable(override: "DAFEIYU_NODE", names: ["node"]) }
+    static var python: String { executable(override: "DAFEIYU_PYTHON", names: ["python3.12", "python3"]) }
     static var idfPython:String {
         if let v=ProcessInfo.processInfo.environment["DAFEIYU_ESP_IDF_PYTHON"],
            !v.isEmpty {return v}

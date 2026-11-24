@@ -217,7 +217,7 @@ struct PersistentWakeToggleView: View {
         let tool=Process()
         tool.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
         tool.arguments=[
-            CompanionProjectPaths.script("r439_persistent_prewake_control.py"),
+            CompanionProjectPaths.script("companion_cli.py"),"wake",
             argument
         ]
         let pipe=Pipe()

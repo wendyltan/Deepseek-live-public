@@ -62,12 +62,12 @@ struct R677ConversationContextSheet:View {
               ["status","archives","archive","new"].contains(args[0]),
               args.allSatisfy({$0.utf8.count<=90}) else {return nil}
         let url=CompanionProjectPaths.rootURL
-            .appendingPathComponent("scripts/r677_context_rotation.py")
+            .appendingPathComponent("scripts/companion_cli.py")
         guard FileManager.default.fileExists(atPath:url.path) else{return nil}
         let task=Process()
         task.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
         task.currentDirectoryURL=CompanionProjectPaths.rootURL
-        task.arguments=[url.path]+args
+        task.arguments=[url.path,"context"]+args
         let output=Pipe()
         task.standardOutput=output
         task.standardError=Pipe()

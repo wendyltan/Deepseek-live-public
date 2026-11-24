@@ -270,7 +270,7 @@ struct MotionLibrarySheet: View {
         guard item.id.range(of:#"^u[a-f0-9]{12}$"#,options:.regularExpression) != nil,
               !isEncoding,localCandidateURL(item.id)==nil else{return}
         let ident=item.id
-        let runner=CompanionProjectPaths.script("r72_prepare_motion_candidate.py")
+        let runner=CompanionProjectPaths.script("companion_cli.py")
         let executable=CompanionProjectPaths.idfPython
         guard FileManager.default.isExecutableFile(atPath:executable),
               FileManager.default.fileExists(atPath:runner) else {
@@ -283,7 +283,7 @@ struct MotionLibrarySheet: View {
             let worker=Process()
             worker.executableURL=URL(fileURLWithPath:executable)
             worker.currentDirectoryURL=CompanionProjectPaths.rootURL
-            worker.arguments=["-m","scripts.r72_prepare_motion_candidate","--id",ident,"--level","6","--mode","contain"]
+            worker.arguments=["-m","scripts.companion_cli","motion-prepare","--id",ident,"--level","6","--mode","contain"]
             let pipe=Pipe()
             worker.standardOutput=pipe
             worker.standardError=Pipe()
@@ -321,7 +321,7 @@ struct MotionLibrarySheet: View {
         prompt.addButton(withTitle:"我在设备旁，确认开始")
         if prompt.runModal() != .alertSecondButtonReturn {return}
         exportPlan(showInFinder:false)
-        let runner=CompanionProjectPaths.script("r83_motion_usb_install.py")
+        let runner=CompanionProjectPaths.script("companion_cli.py")
         let executable=CompanionProjectPaths.idfPython
         guard FileManager.default.isExecutableFile(atPath:executable),
               FileManager.default.fileExists(atPath:runner) else {
@@ -342,7 +342,7 @@ struct MotionLibrarySheet: View {
             let proc=Process()
             proc.executableURL=URL(fileURLWithPath:executable)
             proc.currentDirectoryURL=CompanionProjectPaths.rootURL
-            proc.arguments=["-m","scripts.r83_motion_usb_install","--id",ident,"--port",port,
+            proc.arguments=["-m","scripts.companion_cli","motion-install","--id",ident,"--port",port,
                 "--confirm-physical-tap","--approve-user-slot-write",
                 "--manage-voice-agent"]
             let standard=Pipe()
@@ -380,7 +380,7 @@ struct MotionLibrarySheet: View {
         guard !isCheckingInstall && !isEncoding && !staged.isEmpty else { return }
         exportPlan(showInFinder:false)
         let executable=CompanionProjectPaths.idfPython
-        let script=CompanionProjectPaths.script("r82_motion_sync_dry_run.py")
+        let script=CompanionProjectPaths.script("companion_cli.py")
         guard FileManager.default.isExecutableFile(atPath:executable),
               FileManager.default.fileExists(atPath:script) else {
             feedback="本机烧录通道工具未安装。"
@@ -392,7 +392,7 @@ struct MotionLibrarySheet: View {
             let proc=Process()
             proc.executableURL=URL(fileURLWithPath:executable)
             proc.currentDirectoryURL=CompanionProjectPaths.rootURL
-            proc.arguments=["-m","scripts.r82_motion_sync_dry_run"]
+            proc.arguments=["-m","scripts.companion_cli","motion-check"]
             let pipe=Pipe()
             proc.standardOutput=pipe
             proc.standardError=Pipe()
@@ -426,7 +426,7 @@ struct MotionLibrarySheet: View {
         let proc=Process()
         proc.executableURL=URL(fileURLWithPath:executable)
         proc.currentDirectoryURL=CompanionProjectPaths.rootURL
-        proc.arguments=["-m","scripts.r72_plan_motion_sync","--save"]
+        proc.arguments=["-m","scripts.companion_cli","motion-plan","--save"]
         proc.standardOutput=Pipe()
         proc.standardError=Pipe()
         do{

@@ -29,7 +29,8 @@ MAX_FRAMES=9000  # 9 minutes per session; bounded reconnect required.
 PREWAKE_IDLE_TIMEOUT_S=12.0
 RESULT_TIMEOUT=4.0
 TICKET_SECONDS=12
-WORKER=Path("scripts/mac_r434_stream_kws_worker.js")
+ROOT=Path(__file__).resolve().parents[1]
+WORKER=Path(os.environ.get("DAFEIYU_PREWAKE_WORKER", str(ROOT / "scripts/mac_r434_stream_kws_worker.js")))
 _NODE=os.environ.get("R434_NODE_BIN","/opt/homebrew/bin/node")
 
 class PrewakeProtocolError(ValueError):pass

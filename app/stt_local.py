@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import time
@@ -16,12 +17,36 @@ import wave
 from app.stt_simplify import to_simplified
 from app.mandarin_asr_context import recover_known_terms
 
-# Author defaults remain unchanged. New installations can select their own
-# whisper.cpp build and model directory without editing tracked source.
-WHISPER = Path(os.environ.get("DAFEIYU_WHISPER_CLI",
-    "whisper-cli"))
-MODEL = Path(os.environ.get("DAFEIYU_WHISPER_MODELS",
-    "./app/runtime/models")) / "ggml-small.bin"
+ROOT = Path(__file__).resolve().parents[1]
+MODELS = ROOT / "app/runtime/models"
+TOOLS = Path(os.environ.get("DAFEIYU_TOOLS_ROOT", str(ROOT.parent.parent / "Tools")))
+
+
+def _pick_path(env_key: str, *candidates: Path) -> Path:
+    configured = os.environ.get(env_key, "").strip()
+    if configured:
+        return Path(configured).expanduser()
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+WHISPER = _pick_path(
+    "DAFEIYU_WHISPER_CLI",
+    *( [Path(found)] if (found := shutil.which("whisper-cli")) else [] ),
+    ROOT / "app/runtime/bin/whisper-cli",
+    TOOLS / "whisper.cpp/build/bin/whisper-cli",
+)
+MODEL_DIR = (
+    Path(os.environ["DAFEIYU_WHISPER_MODELS"]).expanduser()
+    if os.environ.get("DAFEIYU_WHISPER_MODELS", "").strip()
+    else next(
+        (d for d in (MODELS, TOOLS / "whisper.cpp/models") if (d / "ggml-small.bin").is_file()),
+        MODELS,
+    )
+)
+MODEL = MODEL_DIR / "ggml-small.bin"
 # R323: conservative, reversible model selection. A candidate is never enabled
 # just because a file was downloaded; the launch environment must opt in.
 ASR_MODELS = {
@@ -38,9 +63,14 @@ def selected_asr_model() -> tuple[str, Path]:
     if not model.is_file() or model.stat().st_size < 100_000_000:
         raise TranscriptionError("所选语音模型未就绪，未执行识别")
     return name, model
-VAD_MODEL = Path(os.environ.get("DAFEIYU_WHISPER_VAD_MODEL",
-    "./app/runtime/models/silero-v6.2.0-ggml.bin"))
-FFMPEG = Path(os.environ.get("DAFEIYU_FFMPEG", "/opt/homebrew/bin/ffmpeg"))
+VAD_MODEL = _pick_path(
+    "DAFEIYU_WHISPER_VAD_MODEL",
+    MODELS / "silero-v6.2.0-ggml.bin",
+    MODELS / "ggml-silero-v6.2.0.bin",
+    MODEL_DIR / "silero-v6.2.0-ggml.bin",
+    MODEL_DIR / "for-tests-silero-v6.2.0-ggml.bin",
+)
+FFMPEG = Path(os.environ.get("DAFEIYU_FFMPEG", shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"))
 ALLOWED_TYPES = {"audio/webm", "audio/mp4", "audio/ogg", "audio/wav", "audio/x-wav"}
 MAX_AUDIO_BYTES = 4_000_000
 MAX_SECONDS = 20.0

@@ -135,7 +135,7 @@ struct RemoteDisplaySheet: View {
         guard alert.runModal() == .alertFirstButtonReturn else {return}
         let python=CompanionProjectPaths.idfPython
         let working=CompanionProjectPaths.rootURL.path
-        let script=working+"/scripts/r92_screen_monitor.py"
+        let script=working+"/scripts/companion_cli.py"
         guard FileManager.default.isExecutableFile(atPath:python),
               FileManager.default.fileExists(atPath:script) else {
             feedback="监控工具尚未安装，未打开串口。"
@@ -144,7 +144,7 @@ struct RemoteDisplaySheet: View {
         let task=Process()
         task.executableURL=URL(fileURLWithPath:python)
         task.currentDirectoryURL=URL(fileURLWithPath:working)
-        task.arguments=["-m","scripts.r92_screen_monitor","--duration","95"]
+        task.arguments=["-m","scripts.companion_cli","screen-monitor","--duration","95"]
         let log=dir.appendingPathComponent("monitor-last.log")
         do {
             try FileManager.default.createDirectory(at:dir,withIntermediateDirectories:true,

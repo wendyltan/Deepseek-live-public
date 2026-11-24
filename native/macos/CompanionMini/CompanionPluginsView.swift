@@ -169,19 +169,16 @@ struct CompanionPluginsView:View {
     }
     private var effectivePython:String {
         if !pythonExecutable.isEmpty{return pythonExecutable}
-        if let fromEnv=ProcessInfo.processInfo.environment["DAFEIYU_PYTHON"] {
-            return fromEnv
-        }
-        return "/opt/homebrew/bin/python3.12"
+        return CompanionProjectPaths.python
     }
 
     // This never runs on the UI thread. The Python backend can only read the
     // specific user's Deepseek-live companion HOME and curated local catalog.
     private nonisolated static func invoke(
         python:String,root:String,home:String,extra:[String],
-        source:String="r659_plugin_manager.py") throws -> Data {
-        guard ["r659_plugin_manager.py",
-               "r674_local_market_access.py"].contains(source) else {
+        source:String="plugins") throws -> Data {
+        guard ["plugins",
+               "market"].contains(source) else {
             throw NSError(domain:"companion-plugin-script",code:2,
                           userInfo:[NSLocalizedDescriptionKey:"未认可的插件管理脚本"])
         }
@@ -193,10 +190,7 @@ struct CompanionPluginsView:View {
                              userInfo:[NSLocalizedDescriptionKey:"请先配置项目目录与 Python 3.12"]) }
         let proc=Process()
         proc.executableURL=URL(fileURLWithPath:python)
-        // Python invoked with an absolute script path does not reliably put
-        // the repository root on sys.path. All three backends are modules.
-        let module="scripts."+source.replacingOccurrences(of:".py",with:"")
-        proc.arguments=["-m",module]+extra+["--dsh-home",home]
+        proc.arguments=["-m","scripts.companion_cli",source]+extra+["--dsh-home",home]
         proc.currentDirectoryURL=URL(fileURLWithPath:root)
 
         // A child may produce >64KB of pnpm errors. Waiting before draining
@@ -294,7 +288,7 @@ struct CompanionPluginsView:View {
             let result=await Task.detached(priority:.utility) {
                 Result {
                     try Self.invoke(python:python,root:root,home:home,
-                        extra:["url"],source:"r674_local_market_access.py")
+                        extra:["url"],source:"market")
                 }
             }.value
             switch result {
@@ -332,7 +326,7 @@ struct CompanionPluginsView:View {
         panel.prompt="选择项目"
         if panel.runModal() == .OK,let url=panel.url {
             guard FileManager.default.fileExists(
-                atPath:url.appendingPathComponent("scripts/r659_plugin_manager.py").path)
+                atPath:url.appendingPathComponent("scripts/companion_cli.py").path)
             else {notice="所选目录不是 Deepseek-live 源码";return}
             projectRoot=url.path
             load()

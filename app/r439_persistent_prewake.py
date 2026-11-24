@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from app.r640_release_archive import ROOT as R640_ARCHIVE, archive_valid as r640_archive_valid
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("DAFEIYU_PROJECT_ROOT", str(Path(__file__).resolve().parents[1])))
 PAIR = Path.home() / "Library/Application Support/Deepseek-live/lan-pairing"
 PREF = PAIR / "r439-persistent-wake.json"
 TX=R640_ARCHIVE / "wake/TX.json"

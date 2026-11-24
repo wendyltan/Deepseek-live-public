@@ -10,12 +10,8 @@ import os
 import subprocess
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]
-# The production USB LaunchAgent deliberately runs from an isolated private
-# Python runtime. Its Node E1b owner remains the canonical project vault;
-# never create a second memory store under the private runtime copy.
-if not (ROOT/"scripts/r308_unified_memory.mjs").is_file():
-    ROOT=Path(".")
+# An isolated runtime can point to the canonical owner vault via DAFEIYU_PROJECT_ROOT.
+ROOT=Path(os.environ.get("DAFEIYU_PROJECT_ROOT", str(Path(__file__).resolve().parents[1])))
 SCRIPT=ROOT/"scripts/r308_unified_memory.mjs"
 FLAG=Path.home()/"Library/Application Support/Deepseek-live/companion-native/r308-unified-active.json"
 NODE=Path("/opt/homebrew/bin/node")

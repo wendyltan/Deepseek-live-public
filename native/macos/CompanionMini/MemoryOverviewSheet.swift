@@ -146,13 +146,13 @@ private final class MemoryOverviewModel: ObservableObject {
 
     nonisolated private static func fetchManualStatus() -> Data? {
         let root=CompanionProjectPaths.rootURL
-        let script=root.appendingPathComponent("scripts/r308_unified_memory.mjs")
+        let script=root.appendingPathComponent("scripts/companion_cli.py")
         guard FileManager.default.fileExists(atPath:script.path) else {
             return Data("R308_DIAGNOSTIC_DISK_UNAVAILABLE".utf8)
         }
         let task=Process(),input=Pipe(),output=Pipe(),errors=Pipe()
-        task.executableURL=URL(fileURLWithPath:"/opt/homebrew/bin/node")
-        task.arguments=[script.path,"status"]
+        task.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
+        task.arguments=[script.path,"memory",CompanionProjectPaths.node,"status"]
         task.currentDirectoryURL=root
         task.standardInput=input
         task.standardOutput=output
@@ -235,15 +235,15 @@ private final class MemoryOverviewModel: ObservableObject {
             return "记忆编号已变化，请刷新后重试"
         }
         let root=CompanionProjectPaths.rootURL
-        let script=root.appendingPathComponent("scripts/r308_unified_memory.mjs")
+        let script=root.appendingPathComponent("scripts/companion_cli.py")
         guard FileManager.default.fileExists(atPath:script.path),
               let data=try? JSONSerialization.data(withJSONObject:[
                 "id":id,"revision":revision,"confirm":"确认删除这一条记忆"]) else {
             return "记忆管理程序不可用"
         }
         let task=Process(),input=Pipe(),output=Pipe()
-        task.executableURL=URL(fileURLWithPath:"/opt/homebrew/bin/node")
-        task.arguments=[script.path,"remove"]
+        task.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
+        task.arguments=[script.path,"memory",CompanionProjectPaths.node,"remove"]
         task.currentDirectoryURL=root
         task.standardInput=input
         task.standardOutput=output
@@ -297,13 +297,13 @@ private final class MemoryOverviewModel: ObservableObject {
             return "无效的候选编号"
         }
         let root=CompanionProjectPaths.rootURL
-        let script=root.appendingPathComponent("scripts/r307_voice_review_admin.py")
+        let script=root.appendingPathComponent("scripts/companion_cli.py")
         guard FileManager.default.fileExists(atPath:script.path) else {
             return "审核管理程序不可用"
         }
         let task=Process(), output=Pipe()
-        task.executableURL=URL(fileURLWithPath:"/opt/homebrew/bin/python3.12")
-        task.arguments=[script.path,"discard",id]
+        task.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
+        task.arguments=[script.path,"voice-review","discard",id]
         task.currentDirectoryURL=root
         task.standardOutput=output
         task.standardError=Pipe()
@@ -389,16 +389,18 @@ private final class MemoryOverviewModel: ObservableObject {
               ].filter { action == "save" || $0.key == "confirm" }) else {
             return "参数无效，未作任何修改"
         }
-        let executable = URL(fileURLWithPath: "/opt/homebrew/bin/node")
+        let executable = URL(fileURLWithPath: CompanionProjectPaths.python)
+        let nodeExecutable = CompanionProjectPaths.node
         let project = CompanionProjectPaths.rootURL
-        let script = project.appendingPathComponent("scripts/r32_native_memory_action.mjs")
-        guard FileManager.default.fileExists(atPath: executable.path),
+        let script = project.appendingPathComponent("scripts/companion_cli.py")
+        guard FileManager.default.isExecutableFile(atPath: executable.path),
+              FileManager.default.isExecutableFile(atPath: nodeExecutable),
               FileManager.default.fileExists(atPath: script.path) else {
             return "记忆管理程序不可用"
         }
         let task = Process()
         task.executableURL = executable
-        task.arguments = [script.path, action]
+        task.arguments = [script.path,"memory-action",nodeExecutable,action]
         task.currentDirectoryURL = project
         let input = Pipe()
         let output = Pipe()
@@ -441,13 +443,13 @@ private final class MemoryOverviewModel: ObservableObject {
     func removeAutomaticFact(id: String) -> String {
         guard id.range(of:#"^[a-f0-9]{32}$"#,options:.regularExpression) != nil,
               let script=Optional(URL(fileURLWithPath:
-                CompanionProjectPaths.script("r38_memory_admin.py"))),
+                CompanionProjectPaths.script("companion_cli.py"))),
               FileManager.default.fileExists(atPath:script.path) else {
             return "记忆条目无效"
         }
         let task=Process()
-        task.executableURL=URL(fileURLWithPath:"/opt/homebrew/bin/python3.12")
-        task.arguments=[script.path,"remove",id]
+        task.executableURL=URL(fileURLWithPath:CompanionProjectPaths.python)
+        task.arguments=[script.path,"memory-admin","remove",id]
         task.currentDirectoryURL=script.deletingLastPathComponent().deletingLastPathComponent()
         let output=Pipe();task.standardOutput=output;task.standardError=Pipe()
         do {

@@ -22,6 +22,13 @@
 #include "bsp/display.h"
 #include "esp_codec_dev.h"
 #include "lvgl.h"
+#include "audio_playback.h"
+#include "mic_capture.h"
+#include "usb_control.h"
+#include "anim_scheduler.h"
+#include "ui_controller.h"
+#include "audio_playback_state.h"
+#include "ui_controller_state.h"
 /* lvgl.h includes snapshot header when enabled */
 #ifdef DF_R33_BOARD_UI
 #include "r42_mic_icon.h"
@@ -49,14 +56,11 @@
 #include "r232_greeting_origin.h"
 #include "r237_wake_window.h"
 #include "mbedtls/base64.h"
-#ifdef DF_R190_EXTERNAL_FALLBACK
-#include "mbedtls/sha256.h"
-#include "r190_anim_manifest.h"
-#endif
 #ifdef DF_H12_SD_ANIM
 #include "h12_sd_motion.h"
 static volatile unsigned h12_req_id=0;
-static volatile uint32_t h12_req_seq=0,h12_done_seq=0;
+volatile uint32_t h12_req_seq=0;
+volatile uint32_t h12_done_seq=0;
 static bool h12_use_sd=false;
 #ifdef DF_H13_SD_UPLOAD
 // R154: explicit SD upload gate. The animation task is the sole owner of
@@ -103,20 +107,20 @@ static df_h11_state h11_current_state = {0,"idle"};
 #define MIC_HOLD_MAX_FRAMES 1000 /* 20 seconds; 16kHz x 20ms */
 #define MIC_HOLD_MIN_FRAMES 5    /* 100ms: discard incidental short taps */
 static volatile bool h28_mic_button_pressed=false;
-static volatile bool h28_mic_press_session=false;
+volatile bool h28_mic_press_session=false;
 #ifdef DF_R185_WN9
 static volatile bool r185_auto_capture=false;
 static uint64_t r228_wake_boot_epoch=0; // reset-scoped correlation, not a secret
 static uint32_t r228_wake_seq=0;
 #endif
-static volatile bool h28_touch_requested=false;
+volatile bool h28_touch_requested=false;
 static volatile bool r133_drag_requested=false;
 static uint32_t r133_drag_count=0;
 static volatile bool h28_touch_return_idle=false;
 static uint32_t h28_last_idle_stage_tick=0;
 static uint32_t h28_last_bonus_tick=0;
 static uint32_t h28_tap_count=0;
-static volatile TickType_t h30_touch_requested_at=0;
+volatile TickType_t h30_touch_requested_at=0;
 static uint32_t h28_ordinary_count=0;
 static uint32_t h28_bonus_count=0;
 // A local-only gesture/idle first-frame receipt; never fake host DSH state.
@@ -134,18 +138,16 @@ static volatile unsigned h28_local_frame_kind=0; /* 1 touch, 2 idle */
 #define ANIMATION_TASK_STACK_BYTES (24 * 1024)
 #define VOICE_TASK_STACK_BYTES (12 * 1024)
 _Static_assert(MAX_PEAK<32767 && FIRST_VOL<=100,"bounded audio");
-#ifndef DF_R190_EXTERNAL_FALLBACK
 extern const uint8_t anim_start[] asm("_binary_ANIM_DFS_start");
 extern const uint8_t anim_end[] asm("_binary_ANIM_DFS_end");
-#endif
-extern const uint8_t voice_start[] asm("_binary_VOICE_WAV_start");
-extern const uint8_t voice_end[] asm("_binary_VOICE_WAV_end");
+
 #ifdef DF_R185_WN9
 extern const uint8_t r185_greeting_start[] asm("_binary_R185_GREETING_WAV_start");
 extern const uint8_t r185_greeting_end[] asm("_binary_R185_GREETING_WAV_end");
 #endif
 static const char *TAG="H10_REAL_AVATAR";
-static lv_obj_t *picture,*status_label;
+lv_obj_t *picture;
+lv_obj_t *status_label;
 static lv_image_dsc_t image_desc;
 /* R70_PERFORMANCE_COUNTERS: read-only, collected in animation worker. */
 static volatile uint32_t r70_frames=0,r70_decoding_errors=0;
@@ -167,15 +169,14 @@ static volatile uint32_t r71_drawn_frames=0,r71_offscreen=0;
 static volatile uint32_t r71_hidden=0,r71_bad_descriptor=0,r71_overlay_conflict=0;
 static volatile int32_t r71_x1=0,r71_y1=0,r71_x2=0,r71_y2=0;
 
-
 /* R82: static screen/decoder isolation modes, no new frame buffers. */
 static volatile unsigned r82_display_mode=0; /* 0 live, 1 quadrants, 2 one frame */
 static unsigned r82_current_mode=0;
 static lv_obj_t *r82_quad[4]={NULL,NULL,NULL,NULL};
 static volatile uint32_t r82_static_enters=0,r82_mode_changes=0;
 static uint8_t *raw_frame,*delta,*compressed,*frame_rgb;
-static esp_codec_dev_handle_t speaker;
-static bool speaking;
+esp_codec_dev_handle_t speaker;
+bool speaking;
 // R259: independent small speaking animation while the SD reader is paused.
 static volatile bool r259_local_speaking_visual=false;
 #ifdef DF_R225_LOCAL_OFFLINE
@@ -185,14 +186,16 @@ static volatile int r225_last_rc=-99;
 static volatile int r228_sd_preload_rc=-99,r228_sd_stream_rc=-99;
 static volatile unsigned r228_sd_stage=0; // 0 none,1 request,2 paused,3 read,4 played,5 fallback,6 busy,7 failed
 #endif
-static volatile bool capturing;
+volatile bool capturing;
 // R268 transport is a *single* additional codec owner, never concurrent USB.
-static volatile bool r268_lan_busy=false,r268_lan_touch_finish=false;
+volatile bool r268_lan_busy=false;
+static volatile bool r268_lan_touch_finish=false;
 // R556: UI-only recording origin. Does not control actual mic/codec owner.
 static volatile bool r268_lan_auto_wake=false;
 #ifdef DF_R434_MAC_PREWAKE_ONLY
 static volatile bool r434_prewake_active=false,r434_touch_pending=false;
-static volatile bool r435_wave_cache_ready=false,r435_mouth_first_frame_ready=false;
+static volatile bool r435_wave_cache_ready=false;
+volatile bool r435_mouth_first_frame_ready=false;
 // R436: cached R412 waveform should begin with the authentic local greeting,
 // rather than waiting for full LAN microphone capture to be acknowledged.
 // Only numeric flags cross tasks; no voice PCM, SD or UI object is shared.
@@ -204,7 +207,7 @@ static volatile bool r436_wake_ack_first_frame_ready=false;
 // The WSS worker still validates the real credentials again before TLS.
 static volatile bool r276_lan_paired_cached=false;
 static volatile uint8_t r276_lan_start_error=0; // 1=busy,2=memory,3=task
-static volatile r268_lan_phase_t r268_current_phase=R268_LAN_IDLE;
+volatile r268_lan_phase_t r268_current_phase=R268_LAN_IDLE;
 // R279: LAN voice threads must NEVER wait on LVGL to report phases.
 // Only the LVGL timer below touches status_label or draws the error.
 static volatile r268_lan_phase_t r279_lan_ui_phase=R268_LAN_IDLE;
@@ -216,7 +219,7 @@ static volatile bool r298_lan_cancelled=false;
 static TickType_t r441_touch_status_until=0;
 // R303: independently recorded when authenticated WSS obtains DAC ownership.
 // This is set only after speaker-open succeeds, not based on a guessed UI.
-static volatile bool r303_wss_audio_offered=false;
+volatile bool r303_wss_audio_offered=false;
 // Numeric only, carries no audio samples or character images.
 #define R304_MOUTH_DIAG_MAGIC 0x304B7A15u
 typedef struct {uint32_t magic,cycles;} r304_mouth_trace_t;
@@ -247,13 +250,7 @@ static void r332_trace_init(void){
 
 // R281: tiny numeric RTC-only trace survives a USB reconnect/reset after the
 // user tests battery WSS. Never contains PCM, transcriptions or credentials.
-#define R281_DIAG_MAGIC 0x52783281u
-typedef struct {
- uint32_t magic, sessions, voice_phase_events, lvgl_ticks, status_commits;
- uint32_t avatar_frames_during_wifi, speaker_blocks, slow_codec_blocks;
- uint32_t max_codec_write_us, max_source_peak, clipped_source_samples;
-} r281_ui_audio_trace_t;
-RTC_NOINIT_ATTR static volatile r281_ui_audio_trace_t r281_trace;
+RTC_NOINIT_ATTR volatile r281_ui_audio_trace_t r281_trace;
 // R296: distinct rendered content evidence (counts only, never pixels/audio).
 #define R296_ANIM_TRACE_MAGIC 0x5296A11Au
 typedef struct {
@@ -299,12 +296,10 @@ static volatile bool r232_real_wake_greeting_pending=false;
 // R302: visual-only wake greeting marker, never changes Voice3 audio owner.
 static volatile bool r302_wake_greeting_visual=false;
 #define HOST_ARM_TIMEOUT_MS (180 * 1000)
-static esp_codec_dev_handle_t microphone;
-static uint8_t volume=FIRST_VOL;
-static volatile bool h10_receiving;
+uint8_t volume=FIRST_VOL;
+volatile bool h10_receiving;
 static volatile bool r37_pcm2_active=false,r37_pcm2_abort=false;
 static void h10_dynamic_cancel(void);
-static bool h9_send_line(const char *line,size_t n);
 #ifdef DF_R33_BOARD_UI
 // Device-side only, never inferred from a model reply. 480x480 AMOLED.
 // The Mac owns histories, memories, agent tools and advanced settings.
@@ -346,17 +341,22 @@ static void r251_boot_trace_start(void){
     r251_trace.boots++;
 }
 
-static lv_obj_t *r33_sheet=NULL,*r33_header=NULL,*r33_battery=NULL,*r33_sheet_status=NULL;
+static lv_obj_t *r33_sheet=NULL;
+lv_obj_t *r33_header=NULL;
+lv_obj_t *r33_battery=NULL;
+static lv_obj_t *r33_sheet_status=NULL;
 // The original three-piece icon had alignment gaps; use one original
 // transparent pictogram. No other R36 display objects are changed.
-static lv_obj_t *r33_mic_button=NULL,*r33_mic_stop=NULL,*r46_mic_img=NULL;
+static lv_obj_t *r33_mic_button=NULL;
+lv_obj_t *r33_mic_stop=NULL;
+lv_obj_t *r46_mic_img=NULL;
 static const lv_image_dsc_t r46_mic_dsc={
     .header={.magic=LV_IMAGE_HEADER_MAGIC,.cf=LV_COLOR_FORMAT_ARGB8888,
              .w=R42_MIC_W,.h=R42_MIC_W,.stride=R42_MIC_W*4},
     .data_size=sizeof(r42_mic_argb8888),.data=r42_mic_argb8888
 };
 static bool r33_is_status=false;
-static uint8_t r33_brightness=60;
+uint8_t r33_brightness=60;
 static volatile TickType_t r33_error_since=0;
 static i2c_master_dev_handle_t r34_pmu=NULL,r34_rtc=NULL;
 static TickType_t r34_last_telemetry=0;
@@ -373,14 +373,20 @@ static volatile TickType_t r36_mac_seen_at=0;
 // R268: a recent USB command cannot prove the Mac is still attached after
 // moving to standalone 5V. IDF's SOF-based link monitor distinguishes a real
 // USB host from a power bank; the long command freshness TTL remains intact.
-static bool r268_usb_host_alive(void){
+bool r268_usb_host_alive(void){
     const TickType_t seen=r36_mac_seen_at;
     return usb_serial_jtag_is_connected() && seen!=0 &&
            (TickType_t)(xTaskGetTickCount()-seen)<pdMS_TO_TICKS(240000);
 }
-static lv_obj_t *r36_mac_dot=NULL,*r36_clock_label=NULL,*r36_battery_shell=NULL,*r36_battery_fill=NULL,*r277_power_icon=NULL;
-static lv_obj_t *r36_brightness_slider=NULL,*r36_volume_slider=NULL;
-static lv_obj_t *r36_brightness_pct=NULL,*r36_volume_pct=NULL;
+lv_obj_t *r36_mac_dot=NULL;
+lv_obj_t *r36_clock_label=NULL;
+lv_obj_t *r36_battery_shell=NULL;
+static lv_obj_t *r36_battery_fill=NULL;
+static lv_obj_t *r277_power_icon=NULL;
+lv_obj_t *r36_brightness_slider=NULL;
+lv_obj_t *r36_volume_slider=NULL;
+lv_obj_t *r36_brightness_pct=NULL;
+lv_obj_t *r36_volume_pct=NULL;
 static bool r50_trace_open=false;
 static volatile bool r51_stop_requested=false;
 static bool r51_last_stopped=false;
@@ -389,7 +395,7 @@ static unsigned r50_progress=0;
 static char r50_link_phase[25]="idle";
 static char r50_link_error[20]="none";
 static unsigned r36_real_turns=0;
-static bool r36_last_turn_ok=false;
+bool r36_last_turn_ok=false;
 static uint32_t r36_record_begin_tick=0;
 
 // Two independent read-only devices share the board's existing BSP I2C bus;
@@ -716,7 +722,7 @@ static void r33_base_panel(const char *heading){
     r33_label(r33_sheet,heading,18);
     r33_panel_button(r33_sheet,"X",344,10,48,r33_close);
 }
-static void r36_brightness_changed(lv_event_t *event){
+void r36_brightness_changed(lv_event_t *event){
     (void)event;
     if(capturing||speaking||h10_receiving)return;
     int requested=lv_slider_get_value(r36_brightness_slider);
@@ -731,7 +737,7 @@ static void r36_brightness_changed(lv_event_t *event){
         lv_slider_set_value(r36_brightness_slider,r33_brightness,LV_ANIM_OFF);
     }
 }
-static void r36_volume_changed(lv_event_t *event){
+void r36_volume_changed(lv_event_t *event){
     (void)event;
     if(capturing||speaking||h10_receiving)return;
     int requested=lv_slider_get_value(r36_volume_slider);
@@ -773,7 +779,7 @@ static void r33_open_status(lv_event_t *event){
     r33_sheet_status=r33_label(r33_sheet,"Reading actual device state...",72);
     r33_update_status(NULL);
 }
-static void r51_stop_audio(lv_event_t *event){
+void r51_stop_audio(lv_event_t *event){
     (void)event;
     // STOP stays explicit during THINKING/SPEAKING; repeated MIC taps are
     // ignored instead, so touch lag cannot silently cancel D10 synthesis.
@@ -850,9 +856,8 @@ static void r33_rail_button(lv_obj_t *screen,int y,const char *symbol,lv_event_c
     lv_obj_center(t);
 }
 #if defined(DF_R225_LOCAL_OFFLINE) && defined(DF_R185_WN9)
-static bool r257_local_voice_from_touch(unsigned clip);
+bool r257_local_voice_from_touch(unsigned clip);
 #endif
-#include "r57_ui.h"
 #endif
 
 // H10 full-reply stream is buffered in PSRAM for uninterrupted ES8311
@@ -878,7 +883,6 @@ static TickType_t h10_rx_deadline;
 // Playback starts while chunks are still arriving; END only after LAST PCM.
 #ifdef DF_R46_PCM2_ONLY
 // PCM2 producer worker precedes the legacy USB helper definition.
-static bool h9_send_line(const char *line,size_t n);
 #define R37_RING_BYTES (24000u*2u*5u) // R150: 5s ring; +96KiB PSRAM for long TTS gaps
 #define R37_PACKET_BYTES (960u*2u)
 static StaticStreamBuffer_t r37_stream_ctl;
@@ -897,8 +901,8 @@ static bool r50_pcm2_source_timed_out(void){
 #ifdef DF_R47_PCM2_DIAGNOSTIC
 // Only physical PCM2 transitions are eligible. The actual SD renderer owns
 // sprite changes (never issue USB motion requests mid-audio).
-static volatile uint8_t r47_audio_motion=0; // 1 priming m024, 2 audible m030, 3 return m000
-static volatile uint32_t r47_motion_epoch=0;
+volatile uint8_t r47_audio_motion=0; // 1 priming m024, 2 audible m030, 3 return m000
+volatile uint32_t r47_motion_epoch=0;
 static uint32_t r47_short_waits=0,r47_max_wait_ms=0,r47_low_queue=0;
 #endif
 static void r37_pcm2_worker(void *arg){
@@ -1195,8 +1199,6 @@ static int16_t h10_soft_peak(int16_t sample, uint32_t position, uint32_t total){
     return (int16_t)(x<0?-mag:mag);
 }
 
-
-static bool h9_send_line(const char *line,size_t n);
 #ifdef DF_H28_HOLD_MIC
 // All 35 DFSP clips are genuine 240x240, 8fps. Their opaque character
 // occupies differing vertical pixels. Measured from the first 8 decoded
@@ -1221,87 +1223,14 @@ static uint16_t h29_motion_scale(unsigned id){
 }
 static const char *h28_ui_phase_text(const char *phase);
 #endif
-#ifdef DF_R190_EXTERNAL_FALLBACK
-static const esp_partition_t *r190_asset_partition=NULL;
-static bool r190_checked=false, r190_verified=false;
-static bool r190_partition_verified(void){
-    if(r190_checked)return r190_verified;
-    r190_checked=true;
-    const esp_partition_t *part=esp_partition_find_first(
-        ESP_PARTITION_TYPE_DATA,ESP_PARTITION_SUBTYPE_ANY,"storage");
-    if(!part || part->size<R190_EXPECTED_ANIM_LENGTH)return false;
-    /* This code cannot provision the partition or overwrite existing bytes. */
-    mbedtls_sha256_context ctx;
-    mbedtls_sha256_init(&ctx);
-    if(mbedtls_sha256_starts(&ctx,0)!=0){
-        mbedtls_sha256_free(&ctx);return false;
-    }
-    uint8_t buf[4096], digest[32];
-    size_t pos=0;
-    while(pos<R190_EXPECTED_ANIM_LENGTH){
-        size_t take=R190_EXPECTED_ANIM_LENGTH-pos;
-        if(take>sizeof(buf))take=sizeof(buf);
-        if(esp_partition_read(part,pos,buf,take)!=ESP_OK ||
-           mbedtls_sha256_update(&ctx,buf,take)!=0){
-            mbedtls_sha256_free(&ctx);return false;
-        }
-        pos+=take;
-    }
-    int rc=mbedtls_sha256_finish(&ctx,digest);
-    mbedtls_sha256_free(&ctx);
-    if(rc!=0 || memcmp(digest,R190_EXPECTED_ANIM_SHA256,32)!=0)return false;
-    r190_asset_partition=part;
-    r190_verified=true;
-    return true;
-}
-#endif
 static size_t sprite_read(void *unused, size_t off, uint8_t *dst, size_t count){
     (void)unused;
 #ifdef DF_H12_SD_ANIM
     if(h12_use_sd)return h12_sd_read_motion(off,dst,count);
 #endif
-#ifdef DF_R190_EXTERNAL_FALLBACK
-    /* Read-only separate asset experiment. DO NOT FLASH until full 7 MiB storage
-       partition has a verified user backup and exact asset preprovisioning. */
-    if(!r190_partition_verified())return 0;
-    if(off>R190_EXPECTED_ANIM_LENGTH ||
-       count>R190_EXPECTED_ANIM_LENGTH-off)return 0;
-    return esp_partition_read(r190_asset_partition,off,dst,count)==ESP_OK?count:0;
-#else
     size_t len=(size_t)(anim_end-anim_start);
     if(off>len||count>len-off)return 0;
     memcpy(dst,anim_start+off,count);return count;
-#endif
-}
-static const char *r59_local_status(const char *s){
-    if(!s)return "等待中";
-    static const struct {const char *en,*zh;} map[]={
-        {"Ready - previous request failed","上一次请求失败，已恢复待机"},
-        {"Animation decode failed","动画解码失败"},
-        {"Voice file failed","语音资源不可用"},
-        {"Speaker unavailable","扬声器不可用"},
-        {"Voice codec error","语音播放设备异常"},
-        {"Speaking: local Qwen3 sample","正在播放本地语音"},
-        {"Finished - tap VOICE to replay","播放结束 · 点击录音"},
-        {"Playback failed","语音播放失败"},
-        {"Speaking: verified Mac reply","正在播放 Mac 回复"},
-        {"Reply played","回复播放完成"},
-        {"Reply playback error","回复播报失败"},
-        {"Recording... tap STOP to send","录音中 · 再点发送"},
-        {"Listening / release to send","正在监听 · 松开发送"},
-        {"Sent to Mac / processing","已发给 Mac · 正在处理"},
-        {"Mic USB failed","麦克风传输失败"},
-        {"Hold mic and speak","长按麦克风说话"},
-        {"Voice sent / waiting Mac","语音已发送 · 等待 Mac"},
-        {"Microphone capture error","麦克风采集失败"},
-        {"Mic task unavailable","麦克风任务异常"},
-        {"idle","待机中"},{"listening","正在监听"},
-        {"thinking","正在思考"},{"speaking","正在播报"},
-        {"waiting","正在等待"},{"error","发生错误"}
-    };
-    for(size_t i=0;i<sizeof(map)/sizeof(map[0]);i++)
-        if(strcmp(s,map[i].en)==0)return map[i].zh;
-    return s;
 }
 static void ui_status(const char *s){
     if(esp_lv_adapter_lock(1000)!=ESP_OK)return;
@@ -1310,11 +1239,7 @@ static void ui_status(const char *s){
 }
 static int reset_decoder(dfsp_decoder *dec){
     size_t cap=SPRITE_W*SPRITE_W*3u;
-#ifdef DF_R190_EXTERNAL_FALLBACK
-    size_t bytes=R190_EXPECTED_ANIM_LENGTH;
-#else
     size_t bytes=(size_t)(anim_end-anim_start);
-#endif
 #ifdef DF_H12_SD_ANIM
     if(h12_use_sd)bytes=h12_sd_motion_size();
 #endif
@@ -1323,63 +1248,6 @@ static int reset_decoder(dfsp_decoder *dec){
     if(rc==DFSP_OK && (dec->width!=SPRITE_W ||dec->height!=SPRITE_W||
                       dec->fps!=8))return DFSP_ERR_HEADER;
     return rc;
-}
-// R302: preserve the immutable complete avatar while a physical mic is busy.
-// A <=1.6% breathing transform runs at most every 450ms; no SD reads,
-// no DFSP decode and no writes to the shared RGB565 image PSRAM.
-#define R302_BREATH_MAGIC 0x5292B31Au
-typedef struct {
- uint32_t magic,pulses,wake_pulses,mic_pulses,lock_misses,restores;
-} r302_breath_trace_t;
-RTC_NOINIT_ATTR static volatile r302_breath_trace_t r302_trace;
-typedef struct {
- bool active;
- int32_t original_scale;
- TickType_t last_pulse;
- uint8_t step;
-} r302_breath_state_t;
-static void r302_breathe_complete_image(r302_breath_state_t *state,
-                                         bool enabled,bool is_wake){
- if(r302_trace.magic!=R302_BREATH_MAGIC){
-    r302_trace.magic=R302_BREATH_MAGIC;
-    r302_trace.pulses=0;
-    r302_trace.wake_pulses=0;
-    r302_trace.mic_pulses=0;
-    r302_trace.lock_misses=0;
-    r302_trace.restores=0;
- }
- TickType_t now=xTaskGetTickCount();
- if(enabled){
-    if(state->active && now-state->last_pulse<pdMS_TO_TICKS(450))
-       return;
-    if(esp_lv_adapter_lock(20)!=ESP_OK){
-       r302_trace.lock_misses++;
-       return;
-    }
-    if(picture && lv_obj_is_visible(picture)){
-       if(!state->active){
-          state->original_scale=(int32_t)lv_image_get_scale(picture);
-          state->active=true;
-       }
-       static const int8_t steps[]={2,4,2,0};
-       int32_t scale=state->original_scale+steps[(state->step++)%4u];
-       lv_image_set_scale(picture,(uint32_t)scale);
-       state->last_pulse=now;
-       r302_trace.pulses++;
-       if(is_wake)r302_trace.wake_pulses++;
-       else r302_trace.mic_pulses++;
-    }
-    esp_lv_adapter_unlock();
- }else if(state->active){
-    if(esp_lv_adapter_lock(20)!=ESP_OK){
-       r302_trace.lock_misses++;
-       return;
-    }
-    if(picture)lv_image_set_scale(picture,(uint32_t)state->original_scale);
-    state->active=false;
-    r302_trace.restores++;
-    esp_lv_adapter_unlock();
- }
 }
 static void animation_worker(void *unused){
     (void)unused;
@@ -1450,7 +1318,7 @@ static void animation_worker(void *unused){
             // static DFSP source and pulse its complete image very slowly.
             r302_breathe_complete_image(&r302_breath,
                  r302_wake_greeting_visual && speaking &&
-                 !r259_local_speaking_visual,true);
+                 !r259_local_speaking_visual,true,picture);
             if(!r154_sd_upload_paused){
                 h12_sd_clear_motion();
                 h12_use_sd=false;
@@ -1586,7 +1454,7 @@ static void animation_worker(void *unused){
 #endif
             r322_anim_hold=4;
             // Cancel any historic R302 scale pulse. No geometric bounce.
-            r302_breathe_complete_image(&r302_breath,false,false);
+            r302_breathe_complete_image(&r302_breath,false,false,picture);
             if(!was_capture_paused){
                 r407_play_index=0;
                 r407_last_show=0;
@@ -1636,7 +1504,7 @@ static void animation_worker(void *unused){
             vTaskDelay(pdMS_TO_TICKS(35));
             continue;
         }
-        r302_breathe_complete_image(&r302_breath,false,false);
+        r302_breathe_complete_image(&r302_breath,false,false,picture);
         if(was_capture_paused){
             // R408: numeric evidence only, never sample or record voice data.
             ESP_LOGI(TAG,"@@DFLISTEN1 DIAG cached=%u copies=%u draws=%u lock_miss=%u psram_free=%lu",
@@ -2344,19 +2212,6 @@ static void animation_worker(void *unused){
     }
     vTaskDelete(NULL);
 }
-static bool sample_asset(const uint8_t **pcm,size_t *samples){
-    size_t count=(size_t)(voice_end-voice_start);
-    if(count<45||count>1024u*1024u||memcmp(voice_start,"RIFF",4)||
-       memcmp(voice_start+8,"WAVE",4)||
-       memcmp(voice_start+12,"fmt ",4)||
-       memcmp(voice_start+36,"data",4)||
-       voice_start[20]!=1||voice_start[22]!=1||
-       voice_start[24]!=0xC0||voice_start[25]!=0x5D||
-       voice_start[26]!=0||voice_start[27]!=0||
-       voice_start[34]!=16||(count-44)%2)return false;
-    *pcm=voice_start+44;*samples=(count-44)/2u;
-    return true;
-}
 static void voice_worker(void *unused){
     (void)unused;
     uint32_t local_lease=0;
@@ -2556,28 +2411,6 @@ static void h10_dynamic_command(char *line){
     static const char nack[]="@@DFPCM1 NACK incomplete\n";
     (void)h9_send_line(nack,sizeof(nack)-1);
 }
-// The driver sends each complete base64 line as one atomic ring-buffer
-// operation; ordinary ESP_LOGs (also routed via USB-JTAG VFS driver) can
-// appear between frames but never truncate a PCM payload mid-line.
-// Return false on a real backpressure/connection failure, rather than
-// pretending that 150 audio chunks were sent successfully.
-#define H9_USB_TX_MAX 1100
-static bool h9_send_line(const char *line, size_t n){
-    if(n==0 || n>H9_USB_TX_MAX || !usb_serial_jtag_is_driver_installed())
-        return false;
-    return usb_serial_jtag_write_bytes(line,n,pdMS_TO_TICKS(2200))==(int)n;
-}
-static bool h9_send_audio_frame(unsigned i, const int16_t *samples, bool diagnostic){
-    unsigned char b64[1024]={0};
-    size_t n64=0;
-    if(mbedtls_base64_encode(b64,sizeof(b64),&n64,
-          (const unsigned char *)samples,MIC_BLOCK*2u)!=0)
-        return false;
-    char line[H9_USB_TX_MAX+1];
-    int n=snprintf(line,sizeof(line),"@@DFVOICE1 %s %u %s\n",
-                   diagnostic?"TESTPCM":"PCM",i,b64);
-    return n>0 && n<=H9_USB_TX_MAX && h9_send_line(line,(size_t)n);
-}
 static void h9_usb_loopback(void *unused){
     (void)unused;
     // No ambient mic capture, no model, no audio output, no personal data.
@@ -2588,7 +2421,7 @@ static void h9_usb_loopback(void *unused){
     for(unsigned i=0;ok && i<MIC_FRAMES;i++){
         int16_t sample[MIC_BLOCK];
         for(unsigned j=0;j<MIC_BLOCK;j++)sample[j]=(int16_t)(i*7u+j);
-        ok=h9_send_audio_frame(i,sample,true);
+        ok=h9_send_audio_frame(i,sample,true,MIC_BLOCK);
     }
     if(ok)ok=h9_send_line(END,sizeof(END)-1);
     if(!ok)ESP_LOGE(TAG,"H9_USB_TRANSPORT_LOOPBACK_FAILED");
@@ -2599,152 +2432,8 @@ static void h9_usb_loopback(void *unused){
 // Privacy: only a real long-press captures exactly three seconds. No passive
 // microphone, no persistent PCM, no memory harvesting, no Wi-Fi, no paid calls.
 // Host must be connected to the authorized USB port and must opt into capture.
-#ifdef DF_H28_HOLD_MIC
-static bool h28_send_mic_frame(unsigned i,const int16_t *samples){
-    unsigned char encoded[1024]={0};size_t length=0;
-    if(mbedtls_base64_encode(encoded,sizeof(encoded),&length,
-            (const unsigned char*)samples,MIC_BLOCK*2u)!=0)return false;
-    char line[H9_USB_TX_MAX+1];
-    int n=snprintf(line,sizeof(line),"@@DFVOICE3 PCM %u %s\n",i,encoded);
-    return n>0&&n<=H9_USB_TX_MAX&&h9_send_line(line,(size_t)n);
-}
-#endif
-/* R248: The ES7210 driver starts at +30dB but esp_codec_dev_open() later
- * re-applies codec_dev_t.mic_gain, which is zero-initialized by calloc.
- * Explicitly configure the shared board microphone's persistent gain before
- * any WakeNet or touch capture opens it. This is a one-time init, not a
- * second microphone owner and not a waveform/PCM logger.
- * Failure is visible and MUST block physical promotion, while preserving
- * the existing touch fallback instead of crashing the board.
- */
-static esp_codec_dev_handle_t r248_microphone_init_with_gain(void){
-    esp_codec_dev_handle_t h=bsp_audio_codec_microphone_init();
-    if(!h)return NULL;
-    int rc=esp_codec_dev_set_in_gain(h,30.0f);
-    if(rc!=ESP_CODEC_DEV_OK){
-        ESP_LOGE(TAG,"R248_ES7210_GAIN_30DB_FAILED rc=%d",rc);
-    }else{
-        ESP_LOGI(TAG,"R248_ES7210_GAIN_30DB_EXPLICIT");
-    }
-    return h;
-}
 // R268: one native Wi-Fi worker owns WSS+MIC+DAC in sequence.
 // No Mac USB voice process, offline MN5 engine, SD or animation is rewritten.
-static uint32_t r268_mic_lease=0,r268_dac_lease=0;
-static bool r268_first_dac_frame=true;
-static bool r268_audio_mic_open(void *unused){
-    (void)unused;
-#ifdef DF_R185_WN9
-    if(!r185_wake_wait_released(2300))return false;
-#endif
-    if(!r224_audio_claim(R224_MEDIA_CAPTURE,&r268_mic_lease))return false;
-    if(!microphone)microphone=r248_microphone_init_with_gain();
-    if(!microphone)goto failed;
-    esp_codec_dev_sample_info_t fmt={.sample_rate=16000,.channel=1,.bits_per_sample=16};
-    if(esp_codec_dev_open(microphone,&fmt)!=ESP_CODEC_DEV_OK)goto failed;
-    return true;
-failed:
-    r224_audio_release(R224_MEDIA_CAPTURE,r268_mic_lease);r268_mic_lease=0;
-    return false;
-}
-static bool r268_audio_mic_read(void *unused,int16_t *samples,size_t count){
-    (void)unused;
-    return r268_mic_lease && count==960u &&
-       esp_codec_dev_read(microphone,samples,(int)(count*sizeof(*samples)))==ESP_CODEC_DEV_OK;
-}
-static void r268_audio_mic_close(void *unused){
-    (void)unused;
-    if(!r268_mic_lease)return;
-    esp_codec_dev_close(microphone);
-    r224_audio_release(R224_MEDIA_CAPTURE,r268_mic_lease);r268_mic_lease=0;
-}
-static bool r268_audio_speaker_open(void *unused){
-    (void)unused;
-    if(!r224_audio_claim(R224_MEDIA_PCM2,&r268_dac_lease))return false;
-    if(!speaker)speaker=bsp_audio_codec_speaker_init();
-    if(!speaker)goto failed;
-    esp_codec_dev_sample_info_t fmt={.sample_rate=RATE,.channel=1,.bits_per_sample=16};
-    if(esp_codec_dev_open(speaker,&fmt)!=ESP_CODEC_DEV_OK)goto failed;
-    if(esp_codec_dev_set_out_vol(speaker,volume)!=ESP_CODEC_DEV_OK){
-        esp_codec_dev_close(speaker);goto failed;
-    }
-    r268_first_dac_frame=true;
-    r303_wss_audio_offered=true;
-#ifdef DF_R47_PCM2_DIAGNOSTIC
-    // Reuse the 106-animation PCM2 state machine: preparing voice, not yet
-    // speaking, while buffering the real network audio.
-#ifdef DF_R434_MAC_PREWAKE_ONLY
-    // R435: choose real m030 BEFORE the first DAC sample. Do not call this
-    // speaking yet; the real PCM playback callback still owns that state.
-    r435_mouth_first_frame_ready=false;
-    r47_audio_motion=2;r47_motion_epoch++;
-    for(unsigned wait=0;wait<18u && !r435_mouth_first_frame_ready;wait++)
-        vTaskDelay(pdMS_TO_TICKS(25));
-    ESP_LOGI(TAG,"R435_MOUTH_PREFRAME ready=%u",
-             (unsigned)r435_mouth_first_frame_ready);
-#else
-    r47_audio_motion=1;r47_motion_epoch++;
-#endif
-#endif
-    return true;
-failed:
-    r224_audio_release(R224_MEDIA_PCM2,r268_dac_lease);r268_dac_lease=0;
-    return false;
-}
-static bool r268_audio_speaker_write(void *unused,const int16_t *data,size_t count,bool last){
-    (void)unused;
-    if(!r268_dac_lease||count!=1440u)return false;
-    for(size_t i=0;i<count;i+=480u){
-        int16_t block[480];
-        uint32_t block_peak=0,block_clips=0;
-        for(unsigned j=0;j<480;j++){
-            const int32_t source=(int32_t)data[i+j];
-            const uint32_t peak=(uint32_t)(source<0?-source:source);
-            if(peak>block_peak)block_peak=peak;
-            if(peak>=32760u)block_clips++;
-            block[j]=(int16_t)((source*3)/4);
-        }
-        // Write two RTC metrics ONCE per 20ms block, not per PCM sample.
-        // Keep high-priority codec timing out of diagnostic contention.
-        if(r281_trace.magic==R281_DIAG_MAGIC){
-            if(block_peak>r281_trace.max_source_peak)
-                r281_trace.max_source_peak=block_peak;
-            r281_trace.clipped_source_samples+=block_clips;
-        }
-        r140_apply_pcm_edges(block,480,r268_first_dac_frame,last&&i+480u==count);
-        const int64_t write_start_us=esp_timer_get_time();
-        if(esp_codec_dev_write(speaker,block,sizeof(block))!=ESP_CODEC_DEV_OK)return false;
-        if(r281_trace.magic==R281_DIAG_MAGIC){
-            const uint32_t write_us=(uint32_t)(esp_timer_get_time()-write_start_us);
-            r281_trace.speaker_blocks++;
-            if(write_us>r281_trace.max_codec_write_us)
-                r281_trace.max_codec_write_us=write_us;
-            if(write_us>30000u)r281_trace.slow_codec_blocks++;
-        }
-#ifdef DF_R47_PCM2_DIAGNOSTIC
-        if(r268_first_dac_frame){
-#ifdef DF_R434_MAC_PREWAKE_ONLY
-            // The m030 selection was already primed at codec open.
-            if(r47_audio_motion!=2){r47_audio_motion=2;r47_motion_epoch++;}
-#else
-            r47_audio_motion=2;r47_motion_epoch++;
-#endif
-        }
-#endif
-        r268_first_dac_frame=false;
-    }
-    return true;
-}
-static void r268_audio_speaker_close(void *unused){
-    (void)unused;
-    if(!r268_dac_lease)return;
-    esp_codec_dev_close(speaker);
-    r224_audio_release(R224_MEDIA_PCM2,r268_dac_lease);r268_dac_lease=0;
-    r303_wss_audio_offered=false;
-#ifdef DF_R47_PCM2_DIAGNOSTIC
-    r47_audio_motion=3;r47_motion_epoch++;
-#endif
-}
 static bool r268_audio_stop(void *unused){
     (void)unused;
     return r51_stop_requested ||
@@ -3065,9 +2754,9 @@ static void mic_worker(void *unused){
         int16_t samples[MIC_BLOCK]={0};
         if(esp_codec_dev_read(microphone,samples,sizeof(samples))!=ESP_CODEC_DEV_OK ||
 #ifdef DF_H28_HOLD_MIC
-           !h28_send_mic_frame(frames,samples)){
+           !h28_send_mic_frame(frames,samples,MIC_BLOCK)){
 #else
-           !h9_send_audio_frame(frames,samples,false)){
+           !h9_send_audio_frame(frames,samples,false,MIC_BLOCK)){
 #endif
             ok=false;break;
         }
@@ -3432,7 +3121,7 @@ static void r257_local_touch_worker(void *unused){
     }
     r185_wake_greeting_worker(NULL); // self-deletes and releases audio lease
 }
-static bool r257_local_voice_from_touch(unsigned clip){
+bool r257_local_voice_from_touch(unsigned clip){
     // Fixed IDs correspond to already installed R224 SD voice assets.
     if(!(clip==1 || clip==2 || clip==3 || clip==4 || clip==8))return false;
     if(speaking || capturing || h10_receiving || r37_pcm2_active ||
@@ -3634,26 +3323,6 @@ static void h28_on_avatar_tap(lv_event_t *event){
     lv_label_set_text(status_label,"正在播放互动动作");
 }
 #endif
-static void on_avatar_hold(lv_event_t *event){
-    (void)event;
-    if(speaking||capturing||loopback_busy||h10_receiving)return;
-    const TickType_t now=xTaskGetTickCount();
-    if(!mic_host_armed ||
-       (int32_t)(now - mic_host_deadline)>=0){
-        mic_host_armed=false;
-        ESP_LOGW(TAG,"H8_MIC_HOLD_SKIPPED_UNARMED");
-        // This LVGL callback runs inside the LVGL task. Do not relock the
-        // adapter from the callback (nonrecursive adapter lock).
-        lv_label_set_text(status_label,"先在 Mac 启动语音服务");
-        return;
-    }
-    mic_host_armed=false; // single-use arm; never begin passive recording
-    ESP_LOGI(TAG,"H8_MIC_HOLD_TRIGGERED");
-    capturing=true;
-    if(xTaskCreate(mic_worker,"h8_mic",MIC_STACK_BYTES,NULL,5,NULL)!=pdPASS){
-        capturing=false;ui_status("Mic task unavailable");
-    }
-}
 // Incoming USB control commands must match a fixed allow-list. No generic
 // shell, no arbitrary model tools, and no automatic microphone activation.
 static void usb_control_worker(void *unused){
@@ -4844,15 +4513,6 @@ static const char *h28_ui_phase_text(const char *phase){
     return "待机中 · 点击录音";
 }
 #endif
-static void on_voice(lv_event_t *event){
-    (void)event;
-    if(speaking||h10_receiving)return;
-    speaking=true;
-    lv_label_set_text(status_label,"正在准备语音");
-    if(xTaskCreate(voice_worker,"h5_voice",VOICE_TASK_STACK_BYTES,NULL,5,NULL)!=pdPASS){
-        speaking=false;lv_label_set_text(status_label,"语音工作线程异常");
-    }
-}
 void app_main(void){
     r251_boot_trace_start();
 #ifdef DF_R185_WN9
@@ -4863,10 +4523,8 @@ void app_main(void){
     r228_wake_seq=0;
 #endif
     ESP_LOGI(TAG,"H10_DUPLEX_PCM_LOCAL_USB_NO_AUTO_MIC");
-#ifdef DF_H28_HOLD_MIC
     h28_last_idle_stage_tick=(uint32_t)xTaskGetTickCount();
     h28_last_bonus_tick=h28_last_idle_stage_tick;
-#endif
     const size_t cap=SPRITE_W*SPRITE_W*3u;
     raw_frame=heap_caps_malloc(cap,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
     delta=heap_caps_malloc(cap,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
@@ -4909,18 +4567,13 @@ void app_main(void){
     lv_obj_set_style_text_color(screen,lv_color_hex(0x193653),0);
     lv_obj_t *title=lv_label_create(screen);
 #ifdef DF_H13_SD_UPLOAD
-#ifdef DF_H28_HOLD_MIC
     lv_label_set_text(title,"DeepSeek");
-#else
-    lv_label_set_text(title,"DAFEIYU   /   H13");
-#endif
 #elif defined(DF_H12_SD_ANIM)
     lv_label_set_text(title,"DAFEIYU   /   H12");
 #else
     lv_label_set_text(title,"DAFEIYU   /   H10");
 #endif
     lv_obj_set_style_text_font(title,&lv_font_montserrat_22,0);
-#ifdef DF_H28_HOLD_MIC
     lv_obj_t *brand=lv_label_create(screen);
     // Tiny built-in CJK subset omits the glyphs 肥 / 鱼. Use a fully
     // supported Latin brand now rather than rendering broken squares.
@@ -4928,9 +4581,7 @@ void app_main(void){
     lv_obj_set_style_text_font(brand,&lv_font_montserrat_16,0);
     lv_obj_set_style_text_color(brand,lv_color_hex(0x2873B9),0);
     lv_obj_align(brand,LV_ALIGN_TOP_MID,0,10);
-#endif
     lv_obj_align(title,LV_ALIGN_TOP_MID,0,30);
-#ifdef DF_R33_BOARD_UI
     lv_obj_add_flag(title,LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(brand,LV_OBJ_FLAG_HIDDEN);
     r33_header=lv_label_create(screen);
@@ -4979,74 +4630,41 @@ void app_main(void){
     lv_obj_set_style_text_font(r33_battery,&lv_font_montserrat_16,0);
     lv_obj_set_style_text_color(r33_battery,lv_color_hex(0x507A92),0);
     lv_obj_align(r33_battery,LV_ALIGN_TOP_RIGHT,-13,25);
-#endif
     picture=lv_image_create(screen);
     lv_image_set_src(picture,&image_desc);
-#ifdef DF_H28_HOLD_MIC
     lv_image_set_pivot(picture,120,220); // anchored near feet
-#endif
     lv_obj_add_flag(picture,LV_OBJ_FLAG_CLICKABLE);
-#ifdef DF_H28_HOLD_MIC
     lv_obj_add_event_cb(picture,r133_on_avatar_drag,LV_EVENT_PRESSED,NULL);
     lv_obj_add_event_cb(picture,r133_on_avatar_drag,LV_EVENT_PRESSING,NULL);
     lv_obj_add_event_cb(picture,r133_on_avatar_drag,LV_EVENT_RELEASED,NULL);
     lv_obj_add_event_cb(picture,r133_on_avatar_drag,LV_EVENT_PRESS_LOST,NULL);
     lv_obj_add_event_cb(picture,h28_on_avatar_tap,LV_EVENT_SHORT_CLICKED,NULL);
-#else
-    lv_obj_add_event_cb(picture,on_avatar_hold,LV_EVENT_LONG_PRESSED,NULL);
-#endif
     lv_obj_set_size(picture,240,240);
-#ifdef DF_R33_BOARD_UI
     lv_obj_align(picture,LV_ALIGN_TOP_LEFT,70,113);
-#else
-    lv_obj_align(picture,LV_ALIGN_TOP_MID,0,100);
-#endif
     lv_obj_t *button=lv_button_create(screen);
-#ifdef DF_H28_HOLD_MIC
-#ifdef DF_R33_BOARD_UI
     lv_obj_set_size(button,58,58);
     lv_obj_align(button,LV_ALIGN_TOP_RIGHT,-16,138);
-#else
-    lv_obj_set_size(button,96,96);
-    lv_obj_align(button,LV_ALIGN_TOP_MID,0,345);
-#endif
     lv_obj_set_style_shadow_width(button,18,0);
     lv_obj_set_style_shadow_color(button,lv_color_hex(0x86B8EE),0);
     lv_obj_set_style_shadow_opa(button,LV_OPA_30,0);
-#else
-    lv_obj_set_size(button,214,60);
-    lv_obj_align(button,LV_ALIGN_TOP_MID,0,375);
-#endif
     lv_obj_set_style_radius(button,LV_RADIUS_CIRCLE,0);
     lv_obj_set_style_bg_color(button,lv_color_hex(0x2E73EA),0);
-#ifdef DF_H28_HOLD_MIC
     lv_obj_add_event_cb(button,h28_on_mic_button,LV_EVENT_PRESSED,NULL);
     lv_obj_add_event_cb(button,h28_on_mic_button,LV_EVENT_RELEASED,NULL);
     lv_obj_add_event_cb(button,h28_on_mic_button,LV_EVENT_PRESS_LOST,NULL);
     lv_obj_set_style_bg_color(button,lv_color_hex(0xFFFFFF),0);
-#ifdef DF_R33_BOARD_UI
     lv_obj_set_style_border_width(button,1,0);
     lv_obj_set_style_border_color(button,lv_color_hex(0xC9E3EF),0);
     lv_obj_set_style_radius(button,16,0);
     lv_obj_set_style_shadow_width(button,0,0);
-#endif
     lv_obj_set_style_bg_color(button,lv_color_hex(0xDDEFF7),LV_STATE_PRESSED);
-#else
-    lv_obj_add_event_cb(button,on_voice,LV_EVENT_CLICKED,NULL);
-#endif
     lv_obj_t *label=lv_label_create(button);
-#ifdef DF_H28_HOLD_MIC
     lv_label_set_text(label,""); // icon-only, no long button caption
-#else
-    lv_label_set_text(label,"VOICE  -  TAP");
-#endif
     lv_obj_set_style_text_font(label,&lv_font_montserrat_20,0);
     lv_obj_set_style_text_color(label,lv_color_hex(0xFFFFFF),0);
-#ifdef DF_H28_HOLD_MIC
     lv_obj_center(label);
     // One transparent, center-aligned mic; retains R36 button location and
     // presses. Short tap toggles Voice3; recording displays the original STOP.
-#ifdef DF_R33_BOARD_UI
     r33_mic_button=button;
     r33_mic_stop=lv_label_create(button);
     lv_label_set_text(r33_mic_stop,"STOP");
@@ -5060,21 +4678,10 @@ void app_main(void){
     lv_obj_center(r46_mic_img);
     lv_obj_remove_flag(r46_mic_img,LV_OBJ_FLAG_CLICKABLE);
     ESP_LOGI(TAG,"R46_MIC_ICON_ONLY_READY source=single44 parent=R36");
-#else
-    lv_obj_center(label);
-#endif
-#else
-    lv_obj_center(label);
-#endif
     status_label=lv_label_create(screen);
-#ifdef DF_H28_HOLD_MIC
     lv_label_set_text(status_label,"Hold the mic to speak");
-#else
-    lv_label_set_text(status_label,"240px animated | real voice ready");
-#endif
     lv_obj_set_style_text_color(status_label,lv_color_hex(0x193653),0);
     lv_obj_set_style_text_font(status_label,&lv_font_montserrat_16,0);
-#ifdef DF_R33_BOARD_UI
     lv_obj_set_size(status_label,436,40);
     lv_obj_set_style_bg_color(status_label,lv_color_hex(0xFFFFFF),0);
     lv_obj_set_style_bg_opa(status_label,LV_OPA_COVER,0);
@@ -5102,13 +4709,8 @@ void app_main(void){
     ESP_LOGI(TAG,"R59_WHITE_STAGE no_home_menu mic_icon_small");
     lv_timer_create(r33_update_status,1000,NULL);
     lv_timer_create(r279_lan_ui_tick,130,NULL);
-#else
-    lv_obj_align(status_label,LV_ALIGN_BOTTOM_MID,0,-12);
-#endif
     esp_lv_adapter_unlock();
-#ifdef DF_R33_BOARD_UI
     r34_init_telemetry();
-#endif
     ESP_LOGI(TAG,"H10_DISPLAY_READY avatar_native240 voice_button=1 long_hold_mic=1");
 #ifdef DF_H12_SD_ANIM
     // Leave the card's partitioning and filesystem untouched on startup.
