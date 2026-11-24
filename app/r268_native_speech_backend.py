@@ -6,6 +6,7 @@ a fake backend; importing this module starts no port, microphone, model or API.
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
+import os
 import time
 
 MAX_REPLY_PCM = 180 * 24000 * 2
@@ -659,35 +660,29 @@ class NativeSpeechBackend:
         # Keep the original full-buffer R503 path for ordinary speech that
         # emitted no progress. Once any status PCM was sent, stream ALL final
         # phrases through the same single stream and verified EOS.
+        progressive_r503 = (
+            os.environ.get("DAFEIYU_R503_PROGRESSIVE_PHRASES") == "1"
+            and self._early_tts_permitted(on_pcm)
+            and candidate_r503 and not phone_report and not progress_chunks
+            and len(phrases) > 1
+        )
         buffered = (on_pcm is not None and not phone_report and
-                    not progress_chunks and
+                    not progress_chunks and not progressive_r503 and
                     (len(phrases)>1 or candidate_r503 or verified_clock is not None))
-        # R679: already-verified computer progress PCM may have started
-        # the one WSS audio stream. The real 18.8-second final clause had
-        # RMS 1504 vs 3782: early tiny-chunk gain was falsely too low.
-        # Complete and normalize EACH final R503 phrase before offering
-        # the same exact bytes on this open stream, without holding all
-        # phrases until the end or pretending progress was not emitted.
         full_phrase_computer=(bool(computer_progress and progress_chunks)
                               and candidate_r503 and not phone_report
                               and on_pcm is not None)
-        # R687: verified Pinky progress has already opened one WSS stream.
-        # Complete each independent R503 final phrase BEFORE calculating
-        # its gain. Tiny early chunks can begin hot then fade for 20+ seconds;
-        # freezing their first-chunk gain left the real second phrase at
-        # active RMS 1298 versus the preceding phrase's 2446. Stream the
-        # complete, leveled phrase through the SAME open stream afterwards;
-        # do not buffer the whole turn or resend the already-spoken progress.
         full_phrase_phone=(bool(phone_report and progress_chunks)
                            and candidate_r503 and on_pcm is not None)
         early_tts=(self._early_tts_permitted(on_pcm) and not buffered
+                   and not progressive_r503
                    and not full_phrase_computer and not full_phrase_phone)
         early_level=None
         buffered_level=None
         if early_tts:
             from app.r511_live_tts_pcm import EarlyTurnPCM
             early_level=EarlyTurnPCM(long_answer=len(phrases)>1)
-        elif candidate_r503 and (buffered or full_phrase_computer
+        elif candidate_r503 and (buffered or progressive_r503 or full_phrase_computer
                                  or full_phrase_phone):
             from app.r511_live_tts_pcm import EarlyTurnPCM
             buffered_level=EarlyTurnPCM(long_answer=True)
@@ -773,11 +768,15 @@ class NativeSpeechBackend:
             # Do not change normal pauses, the reference voice or DSH text.
             before=summary(result.pcm)
             pcm_for_level=result.pcm
-            if candidate_r503 and buffered and not early_tts:
-                # Slightly reduce perceived rush while keeping voice pitch.
-                # Full source-to-final buffering was already required by R524.
-                from app.r532_buffered_voice_pacing import soften_fast_r503
-                pcm_for_level,slowed=soften_fast_r503(result.pcm)
+            if candidate_r503 and (buffered or progressive_r503) and not early_tts:
+                # Default to crisp original Qwen pacing; ffmpeg atempo=0.94
+                # WSOLA stretching can slur fast Mandarin consonants on long
+                # replies. Allow explicit opt-in via DAFEIYU_R503_SLOWDOWN=1.
+                if os.environ.get("DAFEIYU_R503_SLOWDOWN")=="1":
+                    from app.r532_buffered_voice_pacing import soften_fast_r503
+                    pcm_for_level,slowed=soften_fast_r503(result.pcm)
+                else:
+                    slowed=False
                 self._mark("r532_r503_tempo",
                            applied=int(slowed),
                            original_duration_ms=before.duration_ms,
@@ -796,7 +795,7 @@ class NativeSpeechBackend:
                 attack_ms=0
             else:
                 repaired,removed_ms,trimmed_runs=(
-                    (pcm_for_level,0,0) if buffered else compress_excess_silence(pcm_for_level))
+                    (pcm_for_level,0,0) if (buffered or progressive_r503) else compress_excess_silence(pcm_for_level))
                 attack_ms=0
                 if buffered_level is not None:
                     leveled=buffered_level.process(
@@ -827,6 +826,11 @@ class NativeSpeechBackend:
                     self._mark("r526_buffered_loudness_smoothed",
                                phrase_index=phrase_index,
                                attenuated_200ms_windows=smoothed_windows)
+                    if os.environ.get("DAFEIYU_TTS_BREATH_MS", "100") != "0":
+                        from app.tts_breath_pacing import extend_silence_valleys
+                        leveled, breath_added_ms = extend_silence_valleys(leveled)
+                        self._mark("tts_breath_pacing", phrase_index=phrase_index,
+                                   added_ms=breath_added_ms)
                     phrase_gain=round((buffered_level.candidate_gain or
                                        buffered_level.previous_candidate_gain)*1000)
                     turn_boost=1000
@@ -873,21 +877,28 @@ class NativeSpeechBackend:
                        global_peak_restricted=(0 if early_tts or buffered_level is not None
                                                else int(leveler.last_peak_restricted)))
             if not early_tts:total+=len(leveled)
-            if (phrase_index>1 and candidate_r503 and buffered and
-                    not early_tts and topic_gap>=100):
-                from app.r537_semantic_tts_boundaries import semantic_interphrase_padding
-                pause=semantic_interphrase_padding(
-                    previous_tail_ms=last_pcm_tail_ms,
-                    next_lead_ms=after.lead_quiet_ms,topic_gap=topic_gap)
+            if (phrase_index>1 and candidate_r503 and (buffered or progressive_r503) and
+                    not early_tts):
+                pause=b""
+                if topic_gap>=100:
+                    from app.r537_semantic_tts_boundaries import semantic_interphrase_padding
+                    pause=semantic_interphrase_padding(
+                        previous_tail_ms=last_pcm_tail_ms,
+                        next_lead_ms=after.lead_quiet_ms,topic_gap=topic_gap)
+                    self._mark("r537_semantic_pause",
+                               inserted_ms=len(pause)//48,topic_gap_chars=topic_gap)
+                elif progressive_r503 and os.environ.get("DAFEIYU_TTS_BREATH_MS", "100") != "0":
+                    from app.tts_breath_pacing import interphrase_breath_gap
+                    pause=interphrase_breath_gap(
+                        previous_tail_ms=last_pcm_tail_ms,
+                        next_lead_ms=after.lead_quiet_ms)
                 if pause:
                     total+=len(pause)
                     if total>MAX_REPLY_PCM:raise ValueError("tts_reply_exceeds_bound")
-                    # R524: this is complete-buffer PCM, so append exactly
-                    # before the next phrase without new TTS generation.
                     chunks.append(pause)
+                    if on_pcm is not None and not buffered:
+                        on_pcm(pause)
                     phrase_timings[-1]["audio_ms"]+=len(pause)//48
-                self._mark("r537_semantic_pause",
-                           inserted_ms=len(pause)//48,topic_gap_chars=topic_gap)
             phrase_timings.append({"text":phrase,"audio_ms":after.duration_ms})
             last_pcm_tail_ms=after.tail_quiet_ms
             if total>MAX_REPLY_PCM:raise ValueError("tts_reply_exceeds_bound")

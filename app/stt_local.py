@@ -55,6 +55,18 @@ class NoSpeechDetected(TranscriptionError):
     """Successful STT but zero valid speech, distinct from engine/USB failure."""
 
 
+def _extract_whisper_text(output_json: Path) -> str:
+    data = json.loads(output_json.read_text(encoding="utf-8"))
+    text = "".join(
+        segment.get("text", "") for segment in data.get("transcription", [])
+        if isinstance(segment, dict)
+    ).strip()
+    for mark in ("[BLANK_AUDIO]", "(无语音)", "[无语音]"):
+        if mark in text:
+            text = text.replace(mark, "")
+    return " ".join(text.split()).strip()
+
+
 def transcribe_bytes(raw: bytes, content_type: str, runtime_root: Path, *, require_vad: bool = False) -> dict:
     media_type = content_type.split(";", 1)[0].strip().lower()
     if media_type not in ALLOWED_TYPES:
@@ -104,44 +116,46 @@ def transcribe_bytes(raw: bytes, content_type: str, runtime_root: Path, *, requi
                 if not MIN_SECONDS <= duration <= MAX_SECONDS:
                     raise TranscriptionError("请录制 0.5～20 秒的语音，再点击发送")
             output_path = directory / "transcript"
-            command = [
+            base_command = [
                 str(WHISPER), "-m", str(model_path), "-f", str(wav),
                 "-l", "zh", "-sns",
                 "-t", "4", "-oj", "-of", str(output_path),
                 "-np", "-nt", "-nf",
             ]
-            # R238: the board wake marker proves where the recording came
-            # from, not that the user spoke. Strict local VAD is enabled only
-            # on physical WakeNet captures. Manual screen-tap path unchanged.
-            if require_vad:
-                if not VAD_MODEL.is_file() or VAD_MODEL.stat().st_size < 100_000:
-                    raise TranscriptionError("本地语音活动检测模型未就绪，唤醒录音未发送")
-                # whisper.cpp: -vspd = MINIMUM speech duration (not padding).
-                # A previous R323 change accidentally raised that gate to 600 ms.
-                # Restore the CLI's 250 ms minimum so short wake questions are
-                # not discarded; use -vp for bounded context around VAD speech.
-                # Keep this wake-only: touch recordings bypass the VAD gate.
-                command += ["--vad", "-vm", str(VAD_MODEL),
-                            "-vt", "0.50", "-vspd", "250", "-vp", "600"]
+            # Use Silero VAD on all turns when present (cuts ~7-13s silent
+            # beam-5 stalls down to <1s). On wake, missing VAD fails closed;
+            # on manual touch, fall back once to full-buffer decode if VAD
+            # trims an ultra-quiet utterance.
+            vad_ready = VAD_MODEL.is_file() and VAD_MODEL.stat().st_size >= 100_000
+            if require_vad and not vad_ready:
+                raise TranscriptionError("本地语音活动检测模型未就绪，唤醒录音未发送")
+            use_vad = require_vad or (vad_ready and os.environ.get("DAFEIYU_ASR_VAD", "1") != "0")
+            vad_flags = ["--vad", "-vm", str(VAD_MODEL), "-vt", "0.50" if require_vad else "0.42", "-vspd", "200" if not require_vad else "250", "-vp", "600"]
             whisper_start = time.monotonic()
             try:
-                result = subprocess.run(command, capture_output=True, text=True,
-                                        timeout=45, check=False)
+                result = subprocess.run(
+                    base_command + (vad_flags if use_vad else []),
+                    capture_output=True, text=True, timeout=45, check=False,
+                )
             except subprocess.TimeoutExpired:
                 raise TranscriptionError("本地语音识别超时，请稍后重试") from None
-            whisper_ms = round((time.monotonic() - whisper_start) * 1000)
             output_json = output_path.with_suffix(".json")
             if result.returncode != 0 or not output_json.is_file():
                 raise TranscriptionError("本地语音识别失败，请稍后重试")
-            data = json.loads(output_json.read_text(encoding="utf-8"))
-            text = "".join(
-                segment.get("text", "") for segment in data.get("transcription", [])
-                if isinstance(segment, dict)
-            ).strip()
-            for mark in ("[BLANK_AUDIO]", "(无语音)", "[无语音]"):
-                if mark in text:
-                    text = text.replace(mark, "")
-            text = " ".join(text.split()).strip()
+            data_json = _extract_whisper_text(output_json)
+            text = data_json
+            if not text and use_vad and not require_vad:
+                try:
+                    output_json.unlink(missing_ok=True)
+                    result = subprocess.run(
+                        base_command, capture_output=True, text=True, timeout=45, check=False,
+                    )
+                except subprocess.TimeoutExpired:
+                    raise TranscriptionError("本地语音识别超时，请稍后重试") from None
+                if result.returncode != 0 or not output_json.is_file():
+                    raise TranscriptionError("本地语音识别失败，请稍后重试")
+                text = _extract_whisper_text(output_json)
+            whisper_ms = round((time.monotonic() - whisper_start) * 1000)
             # whisper.cpp -l zh can still emit Traditional or mixed characters.
             # Normalize after ASR; never modify the stored user's own message.
             try:

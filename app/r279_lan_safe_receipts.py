@@ -32,6 +32,7 @@ _ALLOWED = frozenset({
     "r518_phone_progress_failed","r541_asr_context_correction",
     "r631_phone_audio_tail_guard",
     "r687_pinky_full_phrase_loudness",
+    "tts_breath_pacing",
 })
 _NUMERIC = frozenset({
     "input_pcm_bytes","input_frames","duration_ms","close_code","pending_backend","asr_ms","dsh_ms",
@@ -58,7 +59,7 @@ _NUMERIC = frozenset({
     "max_step_before","max_step_after","progress_code",
     "correction_count","corrected_observed_app_term",
     "padded_ms","original_tail_ms",
-    "enabled","prior_progress_frames",})
+    "enabled","prior_progress_frames","added_ms",})
 _CLASS = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,60}$")
 _CODE = re.compile(r"^[A-Z][A-Z0-9_]{0,65}$")
 

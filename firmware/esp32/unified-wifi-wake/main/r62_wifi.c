@@ -277,6 +277,9 @@ static bool start_wifi(void){
     wifi_step(11);
     e=esp_wifi_start();
     if(e!=ESP_OK)return wifi_error(11,e);
+    // Keep low-latency Wi-Fi responsiveness for real-time 16k/24k WSS audio;
+    // default WIFI_PS_MIN_MODEM introduces DTIM beacon wake jitter.
+    (void)esp_wifi_set_ps(WIFI_PS_NONE);
     // R90 post-start safety: keep enough contiguous internal heap for
     // USB microphone, PCM2 audio and LVGL. Wi-Fi stays off on failure.
     size_t residual=heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);

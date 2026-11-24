@@ -15,8 +15,8 @@ if [[ "$mode" != "check" && "$mode" != "build" ]]; then
 fi
 
 sources=(
-  CompanionProjectPaths.swift main.swift CompanionManagementCenter.swift
-  PersonaOverviewSheet.swift WiFiGatewayStatusView.swift
+  CompanionProjectPaths.swift CompanionModels.swift CompanionStore.swift main.swift CompanionManagementCenter.swift
+  MemoryOverviewSheet.swift PersonaOverviewSheet.swift WiFiGatewayStatusView.swift
   BridgeGrowthReviewSheet.swift ConversationContextSheet.swift
   ReadableMarkdownView.swift VoicePreprocessorSettingsView.swift
   MotionLibrarySheet.swift MotionTriggers106Sheet.swift RemoteDisplaySheet.swift

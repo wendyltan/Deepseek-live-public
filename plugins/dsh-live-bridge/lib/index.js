@@ -4,28 +4,44 @@
  * Loads only in an explicitly selected official Harness profile.
  * No sibling-project service, model key, or remote approval delegation.
  */
-import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { z } from 'zod'
-import { readFileSync, statSync, lstatSync } from 'node:fs'
-import { isAbsolute, join } from 'node:path'
+import { join } from 'node:path'
 import { installReadonlyScope } from './mac-readonly.js'
 import { installModelSelection } from '@deepseek-ai/dsh-agent'
 import { openBindingLedger, turnDigest } from './session-bindings.js'
 import { openManualMemory } from './manual-memory.js'
 import { companionFacts, rememberCompanionFact, companionFactChanges } from './companion-facts.js'
-import { boundedComputerQuestion } from './computer-questions.js'
-import {localMacPreconsent,preapprovedNativeCuaChoice} from './computer-preconsent.js'
-import {cuaMethod,noteCuaResult,verifiedCuaPreselectionRecovery} from './computer-cua-recovery.js'
-import { PrivateSpeechPrewarm } from './private-speech-prewarm.js'
 import { scopedReadOnlyPhoneTools } from './pinky-readonly-policy.js'
-import { delegatedPinkyResult, nativePinkyDelegationState } from './pinky-task-proof.js'
-import { nativePinkyLaunchTarget, settledPinkyLaunch, settledPinkyScreenApp, nativePinkyConfirmedLaunch, nativePinkyConfirmedUnsentDraft } from './pinky-direct-launch-proof.js'
-import { nativePinkyRecoveredNavigation } from './pinky-recovered-step-proof.js'
-import { completedReadonlySearch,recoveredReadonlySearch,rejectedObserveSchema } from './pinky-readonly-observe-recovery.js'
-import { nativePinkySettledScreen, nativePinkyDirectFinalized } from './pinky-direct-finalization-proof.js'
 import { openPersona } from './persona-runtime.js'
 import { openGrowth } from './persona-growth.js'
-import {suggestedGrowthFromUserTurn} from './persona-growth-suggestions.js'
+import { suggestedGrowthFromUserTurn } from './persona-growth-suggestions.js'
+import {
+  readProfileBridgeToken,
+  readProfileAdminToken,
+  send,
+  readBody,
+  isLoopback,
+  goodToken,
+  validWorkspace,
+} from './http-utils.js'
+import {
+  PROTOCOL_VERSION,
+  TURN_ID,
+  CONVERSATION_ID,
+  MODEL_ID,
+  MAX_CONVERSATIONS,
+  MAX_PROMPT,
+  MAX_ACTIVE,
+  MAX_REMEMBERED,
+  FINAL_STATES,
+  publicRecord,
+  savedPublicRecord,
+  applyCompletedTaskOutcome,
+} from './task-records.js'
+import { registerApprovalAndQuestionRoutes } from './approval-routes.js'
+import { registerMemoryManageRoute } from './memory-manage-route.js'
+import { registerSessionEventHandlers } from './session-events.js'
 
 export const name = 'dsh-live-bridge'
 export const inject = ['webServer', 'agents', 'agentDefaultModel', 'tools', 'llm']
@@ -54,169 +70,7 @@ export const Config = z.object({
   personaGrowthDir: z.string().default(''),
 })
 
-function readProfileBridgeToken(path) {
-  if (!path) return ''
-  if (!isAbsolute(path)) throw new Error('bridge_token_path_not_absolute')
-  const file = statSync(path)
-  if (!file.isFile() || (file.mode & 0o077) !== 0 ||
-      (typeof process.getuid === 'function' && file.uid !== process.getuid()))
-    throw new Error('bridge_token_file_not_private')
-  return readFileSync(path, 'utf8').trim()
-}
-function readProfileAdminToken(path) {
-  if (!isAbsolute(path))throw new Error('memory_admin_path_not_absolute')
-  const file=lstatSync(path)
-  if(file.isSymbolicLink()||!file.isFile()||file.nlink!==1||(file.mode&0o077)!==0||
-      (typeof process.getuid==='function' && file.uid!==process.getuid()))
-    throw new Error('memory_admin_file_not_private')
-  return readFileSync(path,'utf8').trim()
-}
-
 const PREFIX = '/dsh-live-bridge'
-const PROTOCOL_VERSION = 1
-const TURN_ID = /^[A-Za-z0-9_-]{8,64}$/
-const CONVERSATION_ID = /^[A-Za-z0-9_-]{8,64}$/
-const MODEL_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/
-const MAX_CONVERSATIONS = 64
-const MAX_PROMPT = 4000
-const MAX_ACTIVE = 16
-const MAX_REMEMBERED = 256
-const LIMIT_BYTES = 16 * 1024
-const FINAL_STATES = new Set(['answered', 'completed', 'failed', 'cancelled'])
-
-function send(res, code, payload) {
-  const body = JSON.stringify(payload)
-  res.writeHead(code, {
-    'content-type': 'application/json; charset=utf-8',
-    'content-length': Buffer.byteLength(body),
-    'cache-control': 'no-store',
-    'x-content-type-options': 'nosniff',
-  })
-  res.end(body)
-}
-
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    let size = 0
-    const parts = []
-    req.on('data', (part) => {
-      size += part.length
-      if (size > LIMIT_BYTES) {
-        reject(new Error('body_too_large'))
-        return
-      }
-      parts.push(part)
-    })
-    req.on('end', () => {
-      if (size > LIMIT_BYTES) return
-      try {
-        const obj = JSON.parse(Buffer.concat(parts).toString('utf8'))
-        resolve(obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : null)
-      } catch { resolve(null) }
-    })
-    req.on('error', reject)
-  })
-}
-
-function isLoopback(req) {
-  const ip = req.socket?.remoteAddress ?? ''
-  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
-}
-
-function goodToken(req, expected) {
-  if (expected.length < 32 || expected.length > 256) return false
-  const header = req.headers?.authorization
-  if (typeof header !== 'string' || !header.startsWith('Bearer ')) return false
-  const actual = Buffer.from(header.slice(7))
-  const wanted = Buffer.from(expected)
-  return actual.length === wanted.length && timingSafeEqual(actual, wanted)
-}
-
-function validWorkspace(text) {
-  if (typeof text !== 'string' || !isAbsolute(text)) return false
-  try { return statSync(text).isDirectory() } catch { return false }
-}
-
-function extractAssistant(event) {
-  if (event?.type !== 'assistant/message') return ''
-  const parts = event.data?.message?.content
-  if (!Array.isArray(parts)) return ''
-  return parts.filter((x) => x?.type === 'text' && typeof x.text === 'string')
-    .map((x) => x.text).join('\n').trim().slice(0, 6000)
-}
-
-function publicRecord(task) {
-  const answered = task.status === 'answered' || task.status === 'completed'
-  return {
-    protocolVersion: PROTOCOL_VERSION,
-    task_id: task.id, turn_id: task.turn,
-    session_id: task.session,
-    ...(task.conversation ? { conversation_id: task.conversation } : {}),
-    status: task.status,
-    result: answered ? {
-      text: task.text,
-      // Only presence of a native reasoning content block; never expose text.
-      reasoning_observed:task.reasoningObserved === true,
-      source: task.status === 'completed' ? 'harness_tool_events' : 'harness_assistant',
-      // A native successful tool result proves the Harness tool boundary,
-      // NOT an arbitrary real-world/business outcome outside that boundary.
-      execution_verified: task.status === 'completed',
-      tool_receipts: [...task.tools.values()].map((tool) => ({
-        name: tool.name, receipt: tool.outcome,
-      })),
-      // Only trusted Pinky tool result state, correlated to the same
-      // original delegated task id. Never expose the id or phone data.
-      ...(task.phoneMode==='pinky' ? {
-        phone_delegation_state:nativePinkyDelegationState(task.tools),
-        phone_confirmed_launch_app:nativePinkyConfirmedLaunch(task.tools),
-        phone_confirmed_unsent_draft:nativePinkyConfirmedUnsentDraft(task.tools),
-        // Generic same-turn direct-action settlement. The separate app
-        // business outcome remains in the original DSH final answer.
-        phone_direct_actions_finalized:task.status==='completed' &&
-          task.turnEnd==='completed' && task.textAfterTools===true &&
-          !task.approvalOutstanding && !task.approvalRejected &&
-          nativePinkyDirectFinalized(task.tools)
-      } : {}),
-      phone_read_only_scoped:task.phoneMode==='readonly' && task.phoneMaskApplied===true,
-      ...(task.phoneRecoveredReadonlySearch===true ? {phone_recovered_readonly_search:true} : {}),
-      ...(task.status==='completed' && completedReadonlySearch(task) ?
-         {phone_completed_readonly_search:true} : {}),
-      phone_pinky_policy_scoped:task.phoneMode==='pinky' && task.phonePolicyApplied===true,
-    } : null,
-    failure: task.status === 'failed' ? (task.failure || 'harness_agent_failed') : null,
-    // R584: a prior failed navigation tap may have been recovered by a
-    // later native tap. This never changes terminal status or grants business
-    // success. It only avoids falsely saying all subsequent phone steps failed.
-    ...(task.phoneMode==='pinky' && task.status==='failed' &&
-        task.failure==='native_tool_failed' &&
-        task.turnEnd==='completed' && task.textAfterTools ? {
-          phone_recovery_state:nativePinkyRecoveredNavigation(task.tools)
-        } : {}),
-    ...(task.persona ? {persona:task.persona} : {}),
-    // Never return tool arguments, raw event bodies or approval tokens.
-    tools:[...task.tools.values()].map(tool=>({name:tool.name,outcome:tool.outcome})),
-  }
-}
-
-function savedPublicRecord(saved) {
-  const terminal=FINAL_STATES.has(saved.status)
-  if (!terminal) throw new Error('unsettled_saved_task')
-  const ok=saved.status==='answered'||saved.status==='completed'
-  return {
-    protocolVersion:PROTOCOL_VERSION,
-    task_id:saved.task_id,turn_id:saved.turn_id,
-    session_id:saved.session_id??null,
-    ...(saved.conversation?{conversation_id:saved.conversation}:{}),
-    status:saved.status,
-    result:ok?{
-      text:saved.text||'',
-      source:saved.status==='completed'?'harness_tool_events':'harness_assistant',
-      execution_verified:saved.status==='completed',
-      tool_receipts:(saved.tools||[]).map(x=>({name:x.name,receipt:x.outcome})),
-    }:null,
-    failure:saved.status==='failed'?(saved.failure||'harness_agent_failed'):null,
-  }
-}
 
 export function apply(ctx, profileConfig = {}) {
   const config = Config.parse(profileConfig)
@@ -345,294 +199,24 @@ export function apply(ctx, profileConfig = {}) {
       return true
     }
 
-    // Official Harness waterfall answerer. No locally invented permission result.
-    // Only the no-I/O probe can be approved in the current isolated milestone.
-    function companionApprovalAnswerer(request, next) {
-      if (!approvalEnabled || request?.toolName !== 'dsh_live_approval_probe')
-        return next()
-      const task=tasks.get(bySession.get(String(request?.agent?.id??''))??'')
-      if (!task || !task.conversation || task.agentRef!==request.agent ||
-          FINAL_STATES.has(task.status) || task.status==='cancel_requested')
-        return 'unavailable'
-      if ([...approvalRequests.values()].some(x=>x.task_id===task.id))
-        return 'unavailable'
-      const request_id=randomUUID()
-      return new Promise(resolve=>{
-        let settled=false
-        const finish=outcome=>{
-          if(settled)return
-          settled=true
-          clearTimeout(timer)
-          request.signal?.removeEventListener('abort',aborted)
-          approvalRequests.delete(request_id)
-          resolve(outcome)
-        }
-        const aborted=()=>finish('cancelled')
-        const timer=setTimeout(()=>finish('unavailable'),120000)
-        approvalRequests.set(request_id,{
-          request_id,task_id:task.id,conversation_id:task.conversation,
-          session_id:task.session,agent:request.agent,
-          tool:'dsh_live_approval_probe',finish,
-        })
-        if(request.signal?.aborted)aborted()
-        else request.signal?.addEventListener('abort',aborted,{once:true})
+    const { companionApprovalAnswerer, scopedComputerQuestionAnswerer } =
+      registerApprovalAndQuestionRoutes({
+        attach,
+        protect,
+        tasks,
+        bySession,
+        byConversation,
+        approvalRequests,
+        computerQuestions,
+        approvalEnabled,
       })
-    }
 
-    // The native macOS CUA provider asks through the official User Questions
-    // waterfall, not approval/request. Capture only an exact live computer
-    // tool question, forward it to the authenticated Mac user, and never
-    // choose a default answer or let a disconnected browser claim it.
-    function scopedComputerQuestionAnswerer(request,next) {
-      const agent=request?.agent
-      const task=tasks.get(bySession.get(String(agent?.id??''))??'')
-      const question=boundedComputerQuestion(request)
-      if(!question || !task || task.agentRef!==agent ||
-         !task.conversation || FINAL_STATES.has(task.status) ||
-         task.status==='cancel_requested' ||
-         ![...task.tools.values()].some(t=>t.name==='cua'&&t.outcome==='pending'))
-        return next()
-      if([...computerQuestions.values()].some(q=>q.task_id===task.id))
-        return next()
-      // R676: a previous explicit switch in Mac Preferences may authorize
-      // only the exact built-in Finder/Chrome access request for this task.
-      // No generic tool grant, no saved CUA permission, no macOS TCC bypass.
-      const preauthorized=preapprovedNativeCuaChoice(request,localMacPreconsent())
-      if(preauthorized)return Promise.resolve(preauthorized)
-      const request_id=randomUUID()
-      return new Promise((resolve,reject)=>{
-        let settled=false
-        const finish=(selection,reason=null)=>{
-          if(settled)return
-          settled=true
-          clearTimeout(timer)
-          request.signal?.removeEventListener('abort',aborted)
-          computerQuestions.delete(request_id)
-          task.computerQuestionOutstanding=false
-          task.factRevision++
-          rememberCompanionFact(task)
-          if(reason)reject(new Error(reason))
-          else resolve({answers:[{id:question.question_id,selected:[selection]}]})
-        }
-        const aborted=()=>finish(null,'cua_question_aborted')
-        const timer=setTimeout(()=>finish(null,'cua_question_timeout'),105000)
-        computerQuestions.set(request_id,{request_id,task_id:task.id,
-          conversation_id:task.conversation,session_id:task.session,
-          agent,question,finish})
-        task.computerQuestionOutstanding=true
-        task.factRevision++
-        rememberCompanionFact(task)
-        if(request.signal?.aborted)aborted()
-        else request.signal?.addEventListener('abort',aborted,{once:true})
-      })
-    }
-
-    function approvalOwner(body) {
-      if(!body || body.protocolVersion!==PROTOCOL_VERSION ||
-         typeof body.conversation_id!=='string' ||
-         !CONVERSATION_ID.test(body.conversation_id))return null
-      const binding=byConversation.get(body.conversation_id)
-      const task=tasks.get(binding?.busy??'')
-      return task?.session && !FINAL_STATES.has(task.status)?task:null
-    }
-
-    attach('/computer-question/pending',async(req,res)=>{
-      if(req.method!=='POST')return send(res,405,{ok:false,error:'method_not_allowed'})
-      if(!protect(req,res))return
-      const body=await readBody(req)
-      if(!body || body.protocolVersion!==PROTOCOL_VERSION ||
-         typeof body.conversation_id!=='string' ||
-         !CONVERSATION_ID.test(body.conversation_id) ||
-         Object.keys(body).some(k=>!['protocolVersion','conversation_id'].includes(k)))
-        return send(res,400,{ok:false,error:'invalid_computer_question_query'})
-      const task=approvalOwner(body)
-      const pending=task?[...computerQuestions.values()].find(q=>
-        q.task_id===task.id && q.session_id===task.session &&
-        q.agent===task.agentRef):null
-      return send(res,200,{ok:true,pending:pending?{
-        task_id:pending.task_id,request_id:pending.request_id,
-        question_id:pending.question.question_id,
-        question:pending.question.question,detail:pending.question.detail,
-        header:pending.question.header,options:pending.question.options,
-      }:null})
-    })
-
-    attach('/computer-question/decide',async(req,res)=>{
-      if(req.method!=='POST')return send(res,405,{ok:false,error:'method_not_allowed'})
-      if(!protect(req,res))return
-      const body=await readBody(req)
-      if(!body || body.protocolVersion!==PROTOCOL_VERSION ||
-         typeof body.conversation_id!=='string' ||
-         !CONVERSATION_ID.test(body.conversation_id) ||
-         !['task_id','request_id','question_id','choice'].every(k=>
-             typeof body[k]==='string' && body[k].length>0 && body[k].length<=160) ||
-         Object.keys(body).some(k=>!['protocolVersion','conversation_id',
-             'task_id','request_id','question_id','choice'].includes(k)))
-        return send(res,400,{ok:false,error:'invalid_computer_question_decision'})
-      const task=approvalOwner(body)
-      const q=computerQuestions.get(body.request_id)
-      if(!task || !q || q.task_id!==task.id || q.agent!==task.agentRef ||
-         q.session_id!==task.session || q.conversation_id!==body.conversation_id ||
-         q.question.question_id!==body.question_id ||
-         !q.question.options.includes(body.choice) ||
-         !task.computerQuestionOutstanding)
-        return send(res,409,{ok:false,error:'computer_question_no_longer_pending'})
-      q.finish(body.choice)
-      return send(res,202,{ok:true,submitted:true,
-        message:'native_computer_question_answer_pending_confirmation'})
-    })
-
-    attach('/approval/pending',async(req,res)=>{
-      if(req.method!=='POST')return send(res,405,{ok:false,error:'method_not_allowed'})
-      if(!protect(req,res))return
-      if(!approvalEnabled)return send(res,503,{ok:false,error:'approval_disabled'})
-      const body=await readBody(req)
-      if(!body || body.protocolVersion!==PROTOCOL_VERSION ||
-         typeof body.conversation_id!=='string' || !CONVERSATION_ID.test(body.conversation_id) ||
-         Object.keys(body).some(k=>!['protocolVersion','conversation_id'].includes(k)))
-        return send(res,400,{ok:false,error:'invalid_approval_query'})
-      const task=approvalOwner(body)
-      const request=task?[...approvalRequests.values()].find(x=>
-        x.task_id===task.id&&x.session_id===task.session):null
-      return send(res,200,{ok:true,pending:request?{
-        task_id:request.task_id,request_id:request.request_id,
-        tool:request.tool,description:'仅返回内存测试标记，不读取或修改电脑',
-        scope:'仅本次操作',
-      }:null})
-    })
-
-    attach('/approval/decide',async(req,res)=>{
-      if(req.method!=='POST')return send(res,405,{ok:false,error:'method_not_allowed'})
-      if(!protect(req,res))return
-      if(!approvalEnabled)return send(res,503,{ok:false,error:'approval_disabled'})
-      const body=await readBody(req)
-      if(!body || body.protocolVersion!==PROTOCOL_VERSION ||
-         typeof body.conversation_id!=='string' || !CONVERSATION_ID.test(body.conversation_id) ||
-         typeof body.task_id!=='string' || typeof body.request_id!=='string' ||
-         !['allowed-once','rejected','cancelled'].includes(body.decision) ||
-         Object.keys(body).some(k=>!['protocolVersion','conversation_id','task_id','request_id','decision'].includes(k)))
-        return send(res,400,{ok:false,error:'invalid_approval_decision'})
-      const task=approvalOwner(body)
-      const request=approvalRequests.get(body.request_id)
-      if(!task || task.id!==body.task_id || !request ||
-         request.task_id!==task.id || request.conversation_id!==body.conversation_id ||
-         request.session_id!==task.session || request.agent!==task.agentRef ||
-         !task.approvalOutstanding || !task.pendingApprovals.size)
-        return send(res,409,{ok:false,error:'approval_no_longer_pending'})
-      request.finish(body.decision)
-      return send(res,202,{ok:true,submitted:true,
-        message:'approval_decision_pending_native_confirmation'})
-    })
-
-    attach('/memory-manage', async (req,res) => {
-      if(req.method!=='POST')return send(res,405,{ok:false,error:'method_not_allowed'})
-      if(!protect(req,res))return
-      if(!memoryVault)return send(res,503,{ok:false,error:'memory_not_enabled'})
-      const admin=req.headers?.['x-dsh-live-memory-token']
-      const wanted=Buffer.from(memoryAdmin)
-      const actual=typeof admin==='string'?Buffer.from(admin):Buffer.alloc(0)
-      if(actual.length!==wanted.length || !timingSafeEqual(actual,wanted))
-        return send(res,403,{ok:false,error:'memory_admin_required'})
-      const body=await readBody(req)
-      if(!body||body.protocolVersion!==PROTOCOL_VERSION ||
-          typeof body.action!=='string')
-        return send(res,400,{ok:false,error:'memory_request_invalid'})
-      const keys={
-        list:['protocolVersion','action'],
-        export:['protocolVersion','action'],
-        read:['protocolVersion','action','id'],
-        consent:['protocolVersion','action','allow','confirm'],
-        put:['protocolVersion','action','id','text','expectedRevision'],
-        remove:['protocolVersion','action','id','expectedRevision','confirm'],
-        'growth.list':['protocolVersion','action','status'],
-        'growth.version':['protocolVersion','action'],
-        'growth.propose':['protocolVersion','action','text','turn_id','confirm'],
-        'growth.decide':['protocolVersion','action','id','decision','expectedRevision','confirm'],
-        'growth.rollback':['protocolVersion','action','toVersion','expectedRevision','confirm'],
-        'growth.suggestion-consent':['protocolVersion','action','allow','expectedRevision','confirm'],
-      }
-      const allowed=keys[body.action]
-      if(!allowed || Object.keys(body).some(key=>!allowed.includes(key)))
-        return send(res,400,{ok:false,error:'memory_request_invalid'})
-      try {
-        if(body.action.startsWith('growth.')) {
-          if(!growth)return send(res,503,{ok:false,error:'growth_disabled'})
-          if(body.action==='growth.list')
-            return send(res,200,{ok:true,candidates:growth.listCandidates(body.status??'new')})
-          if(body.action==='growth.version')
-            return send(res,200,{ok:true,...growth.version()})
-          // Disabling suggestions is always allowed with admin auth. Turning them
-          // ON still requires the existing manual-memory consent first.
-          if(body.action==='growth.suggestion-consent') {
-            if(body.confirm!=='GROWTH_SUGGESTIONS_CONSENT')
-              return send(res,400,{ok:false,error:'growth_confirmation_required'})
-            if(body.allow===true && !memoryVault.list().consent.manual_write)
-              return send(res,403,{ok:false,error:'memory_user_consent_required'})
-            return send(res,200,{ok:true,...growth.setSuggestionConsent({
-              allow:body.allow,expectedRevision:body.expectedRevision,confirmed:true,
-            })})
-          }
-          // Even staging an explicit user proposal requires existing consent.
-          if(!memoryVault.list().consent.manual_write)
-            return send(res,403,{ok:false,error:'memory_user_consent_required'})
-          if(body.action==='growth.propose') {
-            if(body.confirm!=='USER_EXPLICIT_GROWTH_PROPOSAL')
-              return send(res,400,{ok:false,error:'growth_confirmation_required'})
-            return send(res,200,{ok:true,...growth.propose({
-              text:body.text,turn_id:body.turn_id??null,source:'user_explicit',
-            })})
-          }
-          if(body.action==='growth.decide') {
-            if(body.confirm!==(
-              body.decision==='accept'?'ACCEPT_GROWTH_FACT':'REJECT_GROWTH_FACT'))
-              return send(res,400,{ok:false,error:'growth_confirmation_required'})
-            return send(res,200,{ok:true,...growth.decide({
-              id:body.id,decision:body.decision,
-              expectedRevision:body.expectedRevision,confirmed:true,
-            })})
-          }
-          if(body.action==='growth.rollback') {
-            if(body.confirm!=='ROLLBACK_GROWTH_VERSION')
-              return send(res,400,{ok:false,error:'growth_confirmation_required'})
-            return send(res,200,{ok:true,...growth.rollback({
-              toVersion:body.toVersion,expectedRevision:body.expectedRevision,
-              confirmed:true,
-            })})
-          }
-        }
-        if(body.action==='list')return send(res,200,{ok:true,...memoryVault.list()})
-        if(body.action==='export')return send(res,200,{ok:true,...memoryVault.exportAll()})
-        if(body.action==='read')return send(res,200,{ok:true,fact:memoryVault.read(body.id)})
-        if(body.action==='consent') {
-          if(body.confirm!=='MANUAL_MEMORY_CONSENT'||typeof body.allow!=='boolean')
-            return send(res,400,{ok:false,error:'memory_confirmation_required'})
-          memoryVault.setManualConsent(body.allow)
-          return send(res,200,{ok:true,consent:memoryVault.list().consent})
-        }
-        if(body.action==='put') {
-          if(body.id!==undefined && typeof body.id!=='string')
-            return send(res,400,{ok:false,error:'memory_request_invalid'})
-          const {id,...fact}=body
-          const value=memoryVault.put({id, ...fact})
-          return send(res,200,{ok:true,...value})
-        }
-        if(body.action==='remove') {
-          if(body.confirm!=='DELETE_THIS_FACT')
-            return send(res,400,{ok:false,error:'memory_confirmation_required'})
-          return send(res,200,{ok:true,...memoryVault.remove(body.id,body.expectedRevision)})
-        }
-      } catch(err) {
-        const message=err?.message||''
-        if(message==='memory_user_consent_required')
-          return send(res,403,{ok:false,error:message})
-        if(message==='memory_revision_conflict'||message==='growth_revision_conflict')
-          return send(res,409,{ok:false,error:message})
-        if(message.startsWith('growth_'))
-          return send(res,400,{ok:false,error:message})
-        if(['memory_unknown_id','memory_invalid_fact'].includes(message))
-          return send(res,400,{ok:false,error:message})
-        return send(res,503,{ok:false,error:'memory_unavailable'})
-      }
+    registerMemoryManageRoute({
+      attach,
+      protect,
+      memoryVault,
+      memoryAdmin,
+      growth,
     })
 
     attach('/health', async (req, res) => {
@@ -1511,220 +1095,17 @@ export function apply(ctx, profileConfig = {}) {
       if (binding?.busy === task.id) binding.busy = null
     }
     function markCompleted(task) {
-      if (!task || FINAL_STATES.has(task.status)) return
-      if (!task.idleSeen || !task.turnEnd) return
-      if (task.turnEnd === 'aborted') {
-        task.status = 'cancelled'
-      } else if (task.approvalOutstanding) {
-        return
-      } else if (task.approvalRejected) {
-        task.status = 'failed'
-        // Do not misreport a user's native refusal/cancellation as a Host crash.
-        // Both outcomes remain failed for execution-safety; no tool success is claimed.
-        task.failure = task.approvalDenialOutcome === 'rejected'
-          ? 'native_approval_rejected'
-          : task.approvalDenialOutcome === 'cancelled'
-            ? 'native_approval_cancelled' : 'native_approval_not_granted'
-      } else if (task.turnEnd !== 'completed') {
-        task.status = 'failed'
-        task.failure = 'harness_turn_' + task.turnEnd
-      } else if ([...task.tools.values()].some((item) => item.outcome === 'failed')) {
-        if(verifiedCuaPreselectionRecovery(task)) {
-          // R678: provider-confirmed read-only Chrome/Finder result after
-          // a harmless pre-getApp state probe. The failed tool receipt is
-          // retained; no permission or side-effect error is erased.
-          task.status='completed'
-          task.cuaPreselectionRecovered=true
-        }else if(recoveredReadonlySearch(task)) {
-          // R682: one rejected phone_observe argument schema never reached
-          // the phone; a later producer-verified same-app screen result
-          // completed the explicitly read-only SEARCH. Keep failed receipt.
-          task.status='completed'
-          task.phoneRecoveredReadonlySearch=true
-        }else{
-          task.status='failed'
-          task.failure='native_tool_failed'
-        }
-      } else if (task.tools.size &&
-                 [...task.tools.values()].some((item) => item.outcome !== 'success')) {
-        task.status = 'awaiting_result'
-      } else if (task.text && (!task.tools.size || task.textAfterTools)) {
-        // A tool-using turn must contain a subsequent assistant response;
-        // earlier "I will do X" prose isn't a final result.
-        task.status = task.tools.size ? 'completed' : 'answered'
-      } else {
-        task.status = 'awaiting_result'
-      }
+      if (!applyCompletedTaskOutcome(task)) return
       releaseIfFinal(task)
     }
-    // Native official Agent-stream observation, no TTS or new endpoint.
-    // Scope to the task's exact live Agent; never infer owner from foreground UI.
-    disposers.push(ctx.on('agent/assistant-stream', ({agent,frame}) => {
-      const task=lookup(agent?.id)
-      if (!task || task.agentRef!==agent || task.session!==String(agent.id) ||
-          FINAL_STATES.has(task.status) || task.status==='cancel_requested') return
-      try {
-        if (frame?.type==='start' && !task.speechPrewarm &&
-            Number.isSafeInteger(frame.turn) && frame.turn>=0) {
-          task.speechPrewarm=new PrivateSpeechPrewarm({
-            agentId:task.session,sessionId:task.session,
-            taskId:task.id,nativeTurn:frame.turn,
-          })
-        }
-        task.speechPrewarm?.feed(agent,frame)
-      } catch {
-        // Presentation observers must never break a native Agent request.
-        // Drop only our ephemeral copy, without logging sensitive deltas.
-        task.speechPrewarm=null
-      }
-    }))
-    disposers.push(ctx.on('agent/status', ({ agent, status }) => {
-      const task = lookup(agent.id)
-      if (!task || FINAL_STATES.has(task.status)) return
-      task.factRevision += 1
-      if (status === 'running' && task.status !== 'cancel_requested') task.status = 'running'
-      else if (status !== 'running') {
-        task.idleSeen = true
-        task.status = 'awaiting_result'
-        markCompleted(task)
-      }
-      rememberCompanionFact(task)
-    }))
-    disposers.push(ctx.on('agent/error', ({ agent }) => {
-      const task = lookup(agent.id)
-      // A late native error must invalidate a premature completed signal.
-      if (task) {
-        task.speechPrewarm?.nativeEvent('agent/error')
-        task.factRevision += 1; task.status = 'failed'; releaseIfFinal(task)
-        rememberCompanionFact(task)
-      }
-    }))
-    disposers.push(ctx.on('session/event', (session, event) => {
-      const task = lookup(session.id)
-      if (!task || FINAL_STATES.has(task.status)) return
-      const previousRevision = task.factRevision
-      if (event?.type==='tool/call' || event?.type==='approval/asked')
-        task.speechPrewarm?.nativeEvent(event.type)
-      if (['tool/call', 'tool/result', 'approval/asked', 'approval/decided', 'assistant/message', 'turn/end'].includes(event?.type))
-        task.factRevision += 1
-      if (event?.type === 'tool/call') {
-        const id = event.data?.callId
-        const name = event.data?.name
-        if (typeof id === 'string' && id && typeof name === 'string' && name) {
-          if (!task.tools.has(id)) task.tools.set(id, {
-            name, outcome: 'pending',
-            ...(name==='cua'?{cuaMethod:cuaMethod(event.data?.arguments)}:{}),
-            ...(task.phoneMode==='pinky' && name==='mcp__pinky_dafeiyu__phone_launch'
-              ? {launchTarget:nativePinkyLaunchTarget(name,event.data?.arguments)} : {}),
-          })
-          task.textAfterTools = false
-          if (task.status !== 'cancel_requested') task.status = 'running'
-        }
-      } else if (event?.type === 'tool/result') {
-        const message = event.data?.message
-        let callId = null
-        let isError = null
-        // DSH V4: first-class tool-role message; confirm producer-owned source.
-        if (message?.role === 'tool' && message?.source?.kind === 'tool' &&
-            typeof message.toolCallId === 'string' &&
-            message.source.callId === message.toolCallId &&
-            typeof message.isError === 'boolean') {
-          callId = message.toolCallId
-          isError = message.isError
-        } else if (message?.role !== 'tool') {
-          // Older DSH session logs: user-role message wrapping tool-result.
-          const block = message?.content?.[0]
-          if (block?.type === 'tool-result' &&
-              typeof block.toolCallId === 'string' &&
-              typeof block.isError === 'boolean' &&
-              (message?.source === undefined ||
-               (message.source.kind === 'tool' &&
-                message.source.callId === block.toolCallId))) {
-            callId = block.toolCallId
-            isError = block.isError
-          }
-        }
-        const tool = task.tools.get(callId)
-        if (tool && typeof isError === 'boolean') {
-          tool.outcome = isError || event.data?.error ? 'failed' : 'success'
-          if(tool.outcome==='failed' && tool.name==='mcp__pinky_dafeiyu__phone_observe')
-            tool.schemaRejected=rejectedObserveSchema(tool.name,message)
-          if(tool.name==='cua')noteCuaResult(tool,message)
-          if(tool.outcome==='success' && task.phoneMode==='pinky') {
-            // R626: final direct action screen proof must be produced by the
-            // same native tool call. Store only boolean; no screen data.
-            tool.settledScreen=nativePinkySettledScreen(tool.name,message)
-            // Tool-role producer-owned messages only. Parse their first
-            // status line; do not retain the screen, summary or task ID
-            // in any public receipt or persistent ledger.
-            const status=delegatedPinkyResult(tool.name,message)
-            if(status)tool.delegate=status
-            if(tool.name==='mcp__pinky_dafeiyu__phone_launch' && tool.launchTarget){
-              const app=settledPinkyLaunch(tool.name,message,tool.launchTarget)
-              if(app)tool.launchConfirmed=app
-            }
-            if(tool.name==='mcp__pinky_dafeiyu__phone_observe'){
-              tool.observedApp=settledPinkyScreenApp(tool.name,message)
-            }
-            if(tool.name==='mcp__pinky_dafeiyu__phone_type'){
-              tool.typedScreenApp=settledPinkyScreenApp(tool.name,message)
-            }
-          }
-          task.textAfterTools = false
-          markCompleted(task)
-        }
-        // Unknown call IDs, source mismatches and untyped outcomes NEVER verify.
-      } else if (event?.type === 'turn/end') {
-        const kind = event.data?.reason?.kind
-        if (typeof kind === 'string') task.turnEnd = kind
-        markCompleted(task)
-      } else if (event?.type === 'approval/asked') {
-        const {id,toolName} = event.data ?? {}
-        if (typeof id !== 'string' || !id || id.length > 128 ||
-            typeof toolName !== 'string' || !toolName || task.pendingApprovals.has(id)) {
-          task.status = 'failed'
-          task.failure = 'invalid_native_approval'
-          releaseIfFinal(task)
-        } else {
-          task.pendingApprovals.add(id)
-          task.approvalOutstanding = true
-          if (task.status !== 'cancel_requested') task.status = 'approval_needed'
-        }
-      } else if (event?.type === 'approval/decided') {
-        const {id,outcome} = event.data ?? {}
-        if (typeof id !== 'string' || !task.pendingApprovals.has(id) ||
-            !['allowed-once','rejected','cancelled','unavailable'].includes(outcome)) {
-          task.status = 'failed'
-          task.failure = 'invalid_native_approval'
-          releaseIfFinal(task)
-        } else {
-          task.pendingApprovals.delete(id)
-          task.approvalOutstanding = task.pendingApprovals.size > 0
-          if (outcome !== 'allowed-once') {
-            task.approvalRejected = true
-            task.approvalDenialOutcome ??= outcome
-          }
-          if (task.status !== 'cancel_requested')
-            task.status = task.approvalOutstanding ? 'approval_needed' : 'running'
-          markCompleted(task)
-        }
-      } else if (event?.type === 'assistant/message') {
-        // DSH's own message block type is evidence; the raw private
-        // reasoning text, signatures and tool arguments never leave Bridge.
-        const blocks=event.data?.message?.content
-        if(Array.isArray(blocks) && blocks.some(block=>
-          block?.type==='reasoning' && typeof block.text==='string' &&
-          block.text.trim().length>0))task.reasoningObserved=true
-        const text = extractAssistant(event)
-        if (text) {
-          task.text = text
-          task.textAfterTools = true
-        }
-        markCompleted(task)
-      }
-      if (task.factRevision !== previousRevision) rememberCompanionFact(task)
-      // Do not intercept approval/request, autoapprove or claim tool success.
-    }))
+
+    registerSessionEventHandlers({
+      ctx,
+      disposers,
+      lookup,
+      markCompleted,
+      releaseIfFinal,
+    })
 
     return () => {
       for (const request of approvalRequests.values())request.finish('unavailable')

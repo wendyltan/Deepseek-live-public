@@ -146,7 +146,14 @@ def read_private_token(file:Path):
     return secret
 
 def official_bridge_token_path():
-    """Inspect the user's installed DSH Web profile, NOT a guessed token."""
+    """Use the explicit Deepseek-live DSH 3080 identity, not the main DSH 13082."""
+    isolated=os.environ.get("DAFEIYU_DSH_BRIDGE_TOKEN_FILE")
+    if isolated:
+        f=Path(isolated)
+        if not f.is_absolute() or f.is_symlink():
+            raise ValueError("deepseek_live_bridge_token_path_unsafe")
+        # read_private_token checks owner, strict mode and token contents.
+        return f
     explicit=os.environ.get('DAFEIYU_DSH_BRIDGE_TOKEN_FILE')
     if explicit:
         token_path=Path(explicit)

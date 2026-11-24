@@ -431,15 +431,22 @@ bool r268_lan_run(const r268_lan_codec_t *codec,bool wake){
    // has started, waiting to refill to 8 before writing *each* next frame
    // creates 0.5-1s gaps despite 1-7 usable frames in the ring. Keep R508's
    // final unsealed incremental frame, but drain verified legacy PCM.
-   bool need_incoming=r550_wss_pcm_needs_input(
-       offered,got_eos,started,incremental,out_frames,received,played);
-   if(need_incoming){
+   bool rx_retry=false;
+   for(unsigned drained=0;drained<SLOT_COUNT+4u;drained++){
+     if(codec->stop_requested(codec->ctx)){
+        r277_rtc.receipt.exit_reason=1;goto end;
+     }
+     bool need_incoming=r550_wss_pcm_needs_input(
+         offered,got_eos,started,incremental,out_frames,received,played);
+     bool drain_ahead=!need_incoming && offered && !got_eos &&
+         (received-played)<SLOT_COUNT && esp_transport_poll_read(ws,0)>0;
+     if(!need_incoming && !drain_ahead)break;
      // R441: numeric-only receive starvation telemetry, not a network
      // "missing audio" assertion. ESP Codec may still have its own gaps.
-     if(offered&&started&&received==played&&!got_eos)
+     if(need_incoming&&offered&&started&&received==played&&!got_eos)
          r277_rtc.receipt.playback_ring_empty_events++;
      uint32_t rx_begin=(uint32_t)pdTICKS_TO_MS(xTaskGetTickCount());
-     got=read_frame(ws,incoming,PROTO_BUFFER,1500,&opcode);
+     got=read_frame(ws,incoming,PROTO_BUFFER,need_incoming?1500u:200u,&opcode);
      uint32_t rx_wait=(uint32_t)pdTICKS_TO_MS(xTaskGetTickCount())-rx_begin;
      if(offered&&started){
          if(rx_wait>r277_rtc.receipt.playback_read_max_wait_ms)
@@ -458,7 +465,8 @@ bool r268_lan_run(const r268_lan_codec_t *codec,bool wake){
            r587_work_intermission=true;
            phase(codec,R268_LAN_THINKING);
        }
-       continue;
+       if(need_incoming)rx_retry=true;
+       break;
      }
      last_frame_ms=(uint32_t)pdTICKS_TO_MS(xTaskGetTickCount());
      r277_rtc.receipt.protocol_opcode=(uint32_t)opcode;
@@ -557,8 +565,10 @@ bool r268_lan_run(const r268_lan_codec_t *codec,bool wake){
        cJSON_Delete(j);goto end;
      }
      cJSON_Delete(j);
+     if(!offered){rx_retry=true;break;}
      continue;
    }
+   if(rx_retry)continue;
    // Keep one owner for the ES8311 DAC. ACK only after real codec write.
    if(offered && received>played){
      if(!got_speaker){

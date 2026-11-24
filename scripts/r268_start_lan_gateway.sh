@@ -7,8 +7,15 @@ project="$(cd "$(dirname "$0")/.." && pwd -P)"
 tools_root="${DAFEIYU_TOOLS_ROOT-}"
 vendor="${DAFEIYU_WEBSOCKETS_VENDOR-}"
 python="${DAFEIYU_PYTHON-}"
+runtime_vendor="$HOME/Library/Application Support/Deepseek-live/runtime/host-vendor"
 [[ -n "$tools_root" ]] || tools_root="$(dirname "$(dirname "$project")")/Tools"
-[[ -n "$vendor" ]] || vendor="$tools_root/esp32-s3-lab/r268-host-vendor"
+if [[ -z "$vendor" ]]; then
+    if [[ -f "$runtime_vendor/websockets/__init__.py" ]]; then
+        vendor="$runtime_vendor"
+    else
+        vendor="$tools_root/esp32-s3-lab/r268-host-vendor"
+    fi
+fi
 [[ -n "$python" ]] || python="/opt/homebrew/bin/python3.12"
 [[ -x "$python" ]] || python="$(command -v python3 || true)"
 [[ -x "$python" ]] || { echo 'R268 Python missing' >&2; exit 19; }
@@ -49,5 +56,8 @@ fi
 unset DF_LAN_INCREMENTAL_PCM_ENABLED
 if [[ "$(cd "$project" && "$python" "$project/app/r509_incremental_gate.py" --enabled)" == "1" ]]; then
     export DF_LAN_INCREMENTAL_PCM_ENABLED=1
+    # Stream completed multi-phrase R503 replies progressively without changing
+    # legacy single-buffer test contracts.
+    export DAFEIYU_R503_PROGRESSIVE_PHRASES="${DAFEIYU_R503_PROGRESSIVE_PHRASES:-1}"
 fi
 exec "$python" -u "$project/scripts/r268_wifi_mac_gateway.py" "$@"

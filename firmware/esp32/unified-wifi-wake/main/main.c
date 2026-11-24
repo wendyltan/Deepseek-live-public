@@ -152,6 +152,10 @@ static volatile uint32_t r70_frames=0,r70_decoding_errors=0;
 static volatile uint32_t r70_frame_max_ms=0,r70_frame_last_ms=0;
 static volatile uint32_t r70_frame_long=0,r70_gap_max_ms=0,r70_last_frame_tick=0;
 static volatile uint32_t r70_opaque_last=0,r70_opaque_invalid=0;
+// R510 bounded diagnostic averages. Only numeric drawing costs, no imagery.
+static volatile uint32_t r510_stage_ready=0,r510_perf_frames=0;
+static volatile uint32_t r510_avg_load_us=0,r510_avg_decode_us=0;
+static volatile uint32_t r510_avg_lock_us=0,r510_avg_draw_us=0;
 // R322: read-only animation liveness, safe over USB after battery-only freeze.
 // 0=running, 1=SD voice lease, 2=SD transfer, 3=static test,
 // 4=mic capture, 5=decoder failure, 6=LVGL lock timeout.
@@ -1404,6 +1408,21 @@ static void animation_worker(void *unused){
     unsigned r407_cached=0,r407_play_index=0,r407_cache_copies=0;
     unsigned r407_lock_misses=0,r407_record_draws=0;
     bool r407_no_memory_logged=false;
+    // R510: the identical background/shadow was being recomputed and
+    // blended from scratch on every 240x240 frame. Prepare it once in
+    // PSRAM; insufficient memory falls back to R509 pixel-exact behavior.
+    // This does not change SD/DFSP bytes, image identity or LVGL pointers.
+    uint8_t *r510_stage=heap_caps_malloc(R407_FRAME_BYTES,
+                                        MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
+    if(r510_stage){
+        dfsp_stage_background(r510_stage,SPRITE_W,SPRITE_W);
+        dfsp_stage_soft_shadow(r510_stage,SPRITE_W,SPRITE_W,120,216,78,14);
+        r510_stage_ready=1;
+        ESP_LOGI(TAG,"R510_STAGE_STATIC_CACHE_READY bytes=%u",
+                 (unsigned)R407_FRAME_BYTES);
+    }else{
+        ESP_LOGW(TAG,"R510_STAGE_STATIC_CACHE_FALLBACK");
+    }
     TickType_t r407_last_show=0;
     // The SD audio owns the file reader, not the LVGL canvas. Restore the
     // original scale as soon as the local audio lease is released.
@@ -2118,9 +2137,13 @@ static void animation_worker(void *unused){
             r222_lock_acquired_us=esp_timer_get_time();
             // Transparent art must share the *same* RGB565 backing as LVGL.
             // Old 0xE71F left a visible lavender square around the whale.
-            dfsp_stage_background(frame_rgb,SPRITE_W,SPRITE_W);
-            // The shadow belongs UNDER the feet, behind the real sprite.
-            dfsp_stage_soft_shadow(frame_rgb,SPRITE_W,SPRITE_W,120,216,78,14);
+            if(r510_stage){
+                memcpy(frame_rgb,r510_stage,R407_FRAME_BYTES);
+            }else{
+                dfsp_stage_background(frame_rgb,SPRITE_W,SPRITE_W);
+                // The shadow belongs UNDER the feet, behind the real sprite.
+                dfsp_stage_soft_shadow(frame_rgb,SPRITE_W,SPRITE_W,120,216,78,14);
+            }
             if(dfsp_blit_rgb565a8(raw_frame,SPRITE_W,SPRITE_W,frame_rgb,
                                   SPRITE_W,SPRITE_W,0,0,0)<0){
                 ESP_LOGE(TAG,"AVATAR_BLEND_FAILED");rc=DFSP_ERR_STATE;
@@ -2263,6 +2286,21 @@ static void animation_worker(void *unused){
                ? (uint32_t)(r222_lock_acquired_us-r222_lock_begin_us) : 0;
             const uint32_t r222_draw_us=r222_draw_done_us
                ? (uint32_t)(r222_draw_done_us-r222_lock_acquired_us) : 0;
+            // A cheap 8-frame moving average makes decode-vs-draw
+            // bottlenecks visible through one read-only physical receipt.
+            // Initial slow SD handoff samples age out; no periodic UART spam.
+            if(!r510_perf_frames){
+                r510_avg_load_us=r222_load_us;
+                r510_avg_decode_us=r222_decode_us;
+                r510_avg_lock_us=r222_wait_us;
+                r510_avg_draw_us=r222_draw_us;
+            }else{
+                r510_avg_load_us=(7u*r510_avg_load_us+r222_load_us+4u)/8u;
+                r510_avg_decode_us=(7u*r510_avg_decode_us+r222_decode_us+4u)/8u;
+                r510_avg_lock_us=(7u*r510_avg_lock_us+r222_wait_us+4u)/8u;
+                r510_avg_draw_us=(7u*r510_avg_draw_us+r222_draw_us+4u)/8u;
+            }
+            r510_perf_frames++;
             // Up to 4 initial slow warnings, then one per 64 slow frames.
             // Do not flood UART and accidentally create new slow frames.
             if(r222_total_us>=160000u){
@@ -4397,6 +4435,21 @@ static void usb_control_worker(void *unused){
                 (unsigned)r154_sd_upload_pause_requested,
                 (unsigned)r83_transfer_active());
             if(n>0 && n<(int)sizeof(line))(void)h9_send_line(line,(size_t)n);
+            at=0;continue;
+        }
+        if(strcmp(command,"@@DFPERF2 SNAPSHOT")==0){
+            char report[192];
+            int n=snprintf(report,sizeof(report),
+                "@@DFPERF2 n=%lu load_avg_us=%lu decode_avg_us=%lu "
+                "lock_avg_us=%lu draw_avg_us=%lu backdrop_cached=%lu\n",
+                (unsigned long)r510_perf_frames,
+                (unsigned long)r510_avg_load_us,
+                (unsigned long)r510_avg_decode_us,
+                (unsigned long)r510_avg_lock_us,
+                (unsigned long)r510_avg_draw_us,
+                (unsigned long)r510_stage_ready);
+            if(n>0 && n<(int)sizeof(report))
+                (void)h9_send_line(report,(size_t)n);
             at=0;continue;
         }
         if(strcmp(command,"@@DFPERF1 SNAPSHOT")==0){

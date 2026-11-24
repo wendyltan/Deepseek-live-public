@@ -89,11 +89,16 @@ class R434MacPrewake:
         stream_id=secrets.randbits(64) or 1
         session=secrets.token_urlsafe(18)
         next_seq=0
+        env=dict(os.environ)
+        runtime_sherpa=(Path.home()/"Library/Application Support/Deepseek-live"
+                        /"runtime/dsh-cli/node_modules/sherpa-onnx-node")
+        if runtime_sherpa.is_dir() and not env.get("DAFEIYU_SHERPA_MODULE"):
+            env["DAFEIYU_SHERPA_MODULE"]=str(runtime_sherpa)
         try:
             proc=await asyncio.create_subprocess_exec(
                 _NODE,str(self.worker),
                 stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL)
+                stderr=asyncio.subprocess.DEVNULL,env=env)
             # Cold ONNX mmap/initialization can exceed a normal frame deadline.
             # Bound startup separately; frame processing remains fail-closed.
             first=await asyncio.wait_for(proc.stdout.readline(),12.0)
