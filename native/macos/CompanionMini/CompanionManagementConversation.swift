@@ -146,7 +146,9 @@ extension CompanionManagementCenter {
             ScrollView {
                 LazyVStack(alignment:.leading,spacing:18) {
                     let progress=displayedSpokenProgress()
-                    let active=store.activeTaskConversation ?? carriedTask
+                    let retainedTask=Self.shouldRetainCarriedTask(snapshot:store.snapshot)
+                        ? carriedTask : nil
+                    let active=store.activeTaskConversation ?? retainedTask
                     if store.conversationPreview.isEmpty && progress == nil &&
                        active == nil {
                         ContentUnavailableView("暂无已验证对话",

@@ -132,17 +132,19 @@ final class CompanionStore: ObservableObject {
     }
     private func applyServiceStatus(_ state:CompanionServiceStatus?) {
         guard let state else {
-            dshServiceState="未能读取"
-            voiceServiceState="未能读取"
+            if dshServiceState != "未能读取" { dshServiceState="未能读取" }
+            if voiceServiceState != "未能读取" { voiceServiceState="未能读取" }
             return
         }
-        dshServiceState=state.dsh_ready ? "已就绪" :
+        let nextDsh=state.dsh_ready ? "已就绪" :
             (state.dsh_running ? "进程运行 · 健康未通过" : "尚未运行")
-        voiceServiceState=state.voice_verified ? "实体会话已验证" :
+        let nextVoice=state.voice_verified ? "实体会话已验证" :
             (state.lan_occupied ? "Wi-Fi 会话正在使用" :
                 state.voice_running ? "进程运行 · 连接待核实" :
                 state.usb_present ? "未启动" : "USB 未接入")
-        serviceRequested=state.voice_running
+        if dshServiceState != nextDsh { dshServiceState=nextDsh }
+        if voiceServiceState != nextVoice { voiceServiceState=nextVoice }
+        if serviceRequested != state.voice_running { serviceRequested=state.voice_running }
     }
     private func receiveConnectResult(_ result:(Bool,String,CompanionServiceStatus?)) {
         connecting=false
@@ -176,13 +178,13 @@ final class CompanionStore: ObservableObject {
     }
 
     private func markSnapshotUnavailable(_ message:String, now:TimeInterval) {
-        snapshotReadHealthy = false
-        notice = message
+        if snapshotReadHealthy { snapshotReadHealthy = false }
+        if notice != message { notice = message }
         // Keep the last VERIFIED identity/animation on screen only for a very
         // brief read gap; never treat this as live approval/USB availability.
         if snapshot == nil || lastTrustedSnapshotAt <= 0 ||
             now - lastTrustedSnapshotAt > transientReadGraceSeconds {
-            snapshot = nil
+            if snapshot != nil { snapshot = nil }
             lastSnapshotBytes = nil
         }
     }
@@ -295,9 +297,9 @@ final class CompanionStore: ObservableObject {
                 lastSnapshotBytes = raw
                 snapshot = parsed
             }
-            snapshotReadHealthy = true
+            if !snapshotReadHealthy { snapshotReadHealthy = true }
             lastTrustedSnapshotAt = now
-            notice = ""
+            if !notice.isEmpty { notice = "" }
             if let wanted=requestedModel {
                 if parsed.session_verified == true &&
                    parsed.model_confirmed == true &&
@@ -331,11 +333,20 @@ final class CompanionStore: ObservableObject {
               receipt.started_at_unix <= Date().timeIntervalSince1970 + 5,
               Date().timeIntervalSince1970 - receipt.started_at_unix < 86400,
               receipt.session_id.range(of:#"^(?:[a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$"#,options:.regularExpression) != nil
-        else { link=nil;physicalLink="正在核验 ESP32 实体连接";return }
+        else {
+            link=nil
+            if physicalLink != "正在核验 ESP32 实体连接" {
+                physicalLink="正在核验 ESP32 实体连接"
+            }
+            return
+        }
         link = receipt
-        physicalLink = !espVerified ? "ESP32 连接未核实" :
+        let nextPhysicalLink = !espVerified ? "ESP32 连接未核实" :
             (motionPackageVerified ? "ESP32 已握手 · SD历史包已确认" :
                                     "ESP32 已握手 · SD动画降级，语音仍可用")
+        if physicalLink != nextPhysicalLink {
+            physicalLink = nextPhysicalLink
+        }
     }
 
     private func recentVoiceBlockReason() -> String? {

@@ -76,6 +76,15 @@ struct CompanionManagementCenter: View {
     @State private var r634HistoryStamp:String?=nil
     @State private var r634ComparisonStamp:String?=nil
 
+    private static let settledTaskPhases:Set<String>=[
+        "idle","voice_generating","speaking","error"
+    ]
+    static func shouldRetainCarriedTask(snapshot:CompanionSnapshot?) -> Bool {
+        guard let snapshot, snapshot.session_verified == true else { return false }
+        if let tid = snapshot.current_task_id, !tid.isEmpty { return true }
+        return !settledTaskPhases.contains(snapshot.phase)
+    }
+
     private static func trustedReadOnlyStamp(_ name:String,
                                              maxSize:Int)->String? {
         let url=FileManager.default.homeDirectoryForCurrentUser
@@ -352,8 +361,7 @@ struct CompanionManagementCenter: View {
                     carriedTaskID=tid
                     carriedTask=live
                 }
-            } else if store.snapshot?.session_verified == true &&
-                      store.snapshot?.phase == "idle" {
+            } else if !Self.shouldRetainCarriedTask(snapshot:store.snapshot) {
                 carriedTaskID=nil
                 carriedTask=nil
             }

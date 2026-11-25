@@ -100,7 +100,7 @@ static df_h11_state h11_current_state = {0,"idle"};
 #define SPRITE_FRAME 240
 #define RATE 24000
 #define MAX_PEAK 30000
-#define FIRST_VOL 86
+#define FIRST_VOL 92
 #define MIC_RATE 16000
 #define MIC_FRAMES 150
 #ifdef DF_H28_HOLD_MIC
@@ -761,7 +761,7 @@ static void r33_open_settings(lv_event_t *event){
     lv_slider_set_value(r36_brightness_slider,r33_brightness,LV_ANIM_OFF);
     lv_obj_add_event_cb(r36_brightness_slider,r36_brightness_changed,LV_EVENT_VALUE_CHANGED,NULL);
     r33_label(r33_sheet,"Speaker volume (next reply)",155);
-    r36_volume_pct=r33_label(r33_sheet,"88%",155);
+    r36_volume_pct=r33_label(r33_sheet,"92%",155);
     lv_obj_align(r36_volume_pct,LV_ALIGN_TOP_RIGHT,-19,155);
     lv_label_set_text_fmt(r36_volume_pct,"%u%%",volume);
     r36_volume_slider=lv_slider_create(r33_sheet);
@@ -975,11 +975,11 @@ static void r37_pcm2_worker(void *arg){
             continue;
         }
 #ifdef DF_R47_PCM2_DIAGNOSTIC
-        // -2.5dB constant digital headroom keeps short high peaks out of the
+        // 12.5% constant digital headroom keeps short high peaks out of the
         // tiny ES8311 speaker's nonlinear range; volume slider still controls
         // the actual codec volume. No extra TTS requests or altered text.
         for(unsigned i=0;i<480;i++)
-            samples[i]=(int16_t)(((int32_t)samples[i]*3)/4);
+            samples[i]=(int16_t)(((int32_t)samples[i]*7)/8);
 #endif
         // R140: only real codec entry/exit receive an 8ms PCM taper.
         // Never fade at intermediate Qwen segmentation boundaries.
@@ -1683,11 +1683,11 @@ static void animation_worker(void *unused){
            !capturing && !speaking && !h10_receiving &&
            h12_req_seq==h12_done_seq &&
            idle_tick-h28_last_idle_stage_tick>=pdMS_TO_TICKS(
-             (75u+((15u+13u*h28_ordinary_count+7u*h28_bonus_count)%31u))*1000u)){
+             (25u+((7u+11u*h28_ordinary_count+5u*h28_bonus_count)%16u))*1000u)){
             static const unsigned everyday[]={2,3,10,11};
             static const unsigned bonus[]={61,62,67,83,97,99,105};
             unsigned selected;
-            if(idle_tick-h28_last_bonus_tick>=pdMS_TO_TICKS(360000)){
+            if(idle_tick-h28_last_bonus_tick>=pdMS_TO_TICKS(120000)){
                 unsigned round=h28_bonus_count++;
                 selected=r150_rules_pick(3,round,bonus[round%7]);
                 h28_last_bonus_tick=idle_tick;

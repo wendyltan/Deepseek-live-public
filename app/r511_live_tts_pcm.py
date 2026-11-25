@@ -8,6 +8,7 @@ match emitted chunks before the producer can claim success.
 from __future__ import annotations
 from array import array
 import math
+import os
 import sys
 from app.r441_pcm_quality import summary
 
@@ -18,7 +19,7 @@ ENTRY_SAMPLES=840
 PHRASE_RAMP_SAMPLES=3600  # 150 ms, only when the new phrase gain changes
 
 class EarlyTurnPCM:
-    def __init__(self,*,target_rms=2600,max_gain=1.55,long_answer=False):
+    def __init__(self,*,target_rms=3400,max_gain=1.85,long_answer=False):
         self.target_rms=target_rms
         self.max_gain=max_gain
         self.gain=None
@@ -32,8 +33,14 @@ class EarlyTurnPCM:
         self.previous_candidate_gain=1.0
         self.phrase_ramp_samples=0
         self.long_answer=bool(long_answer)
-        self.phrase_target_rms=3300 if long_answer else 3000
-        self.phrase_max_gain=2.5 if long_answer else 1.8
+        self.phrase_target_rms=4300 if long_answer else 4000
+        self.phrase_max_gain=3.0 if long_answer else 2.4
+        try:
+            override=float(os.environ.get("DAFEIYU_TTS_TARGET_RMS", ""))
+        except ValueError:
+            override=None
+        if override is not None and math.isfinite(override):
+            self.phrase_target_rms=min(5200, max(2400, override))
     def process(self, pcm:bytes, *,phrase_index:int, candidate:bool=False)->bytes:
         if not isinstance(pcm,bytes) or not pcm or len(pcm)%2:
             raise ValueError('early_pcm_must_be_pcm16le')

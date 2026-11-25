@@ -87,6 +87,9 @@ struct MotionTriggers106Sheet:View {
     @State private var actionAlertTitle=""
     @State private var actionAlertMessage=""
     @State private var tapRemaining=0
+    // Keep a single timer publisher across body re-evaluations so parent
+    // store polling cannot reset the 0.8s countdown before it fires.
+    private static let pollTimer = Timer.publish(every:0.8,on:.main,in:.common).autoconnect()
     private let choices=[
         ("inherit","不改动这条规则"),
         ("manual","仅手动，不参与自动轮换"),
@@ -255,7 +258,13 @@ struct MotionTriggers106Sheet:View {
         lastNoticeFingerprint=key
         actionAlertTitle=title
         actionAlertMessage=details
-        actionAlertOpen=true
+        NSApp.activate(ignoringOtherApps:true)
+        if actionAlertOpen {
+            actionAlertOpen=false
+            DispatchQueue.main.async { actionAlertOpen=true }
+        } else {
+            actionAlertOpen=true
+        }
     }
     private func refresh(){
         guard let raw=try? Data(contentsOf:reportURL),raw.count<5000,
@@ -322,6 +331,9 @@ struct MotionTriggers106Sheet:View {
                     title:"触发规则未能下发",
                     details:"设备未确认成功：\(reason)。原有设备规则不视为已改变；可稍后重试。")
             }
+        case "starting":
+            tapRemaining=0
+            deviceNotice="正在申请实体授权，已送达设备；等待进入30秒点击窗口…"
         default:deviceNotice="规则操作中，正在校验设备状态…"
         }
     }
@@ -645,31 +657,7 @@ struct MotionTriggers106Sheet:View {
                 .accessibilityIdentifier("r223-physical-approval-banner")
             }
         }
-        .safeAreaInset(edge:.top,spacing:0) {
-            if authorizedRequestStarted != .distantPast &&
-               Date().timeIntervalSince(authorizedRequestStarted)<43 &&
-               (tapRemaining>0 || deviceNotice.contains("正在申请实体授权")) {
-                HStack(spacing:12) {
-                    Image(systemName:tapRemaining>0 ? "hand.tap.fill":"clock")
-                        .font(.system(size:20))
-                    VStack(alignment:.leading,spacing:3) {
-                        Text(tapRemaining>0 ? "现在点击实体大肥鱼" : "授权申请已送出")
-                            .font(.system(size:16,weight:.bold))
-                        Text(tapRemaining>0
-                             ? "实体设备已进入授权窗口，剩余约\(tapRemaining)秒"
-                             : "等待设备回执；还没有开始30秒倒计时，不要提前点击")
-                            .font(.system(size:12))
-                    }
-                    Spacer(minLength:0)
-                }
-                .padding(14)
-                .frame(maxWidth:.infinity)
-                .background(tapRemaining>0 ? Color.orange.opacity(0.20) :
-                             Color.accentColor.opacity(0.11))
-                .accessibilityIdentifier("r223-physical-approval-banner")
-            }
-        }
-        .onReceive(Timer.publish(every:0.8,on:.main,in:.common).autoconnect()){_ in
+        .onReceive(Self.pollTimer){_ in
             refresh()
             refreshReadback()
             refreshPhysicalLibrary()

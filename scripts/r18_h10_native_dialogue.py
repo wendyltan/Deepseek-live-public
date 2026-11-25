@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
@@ -72,6 +73,82 @@ from app.h11_device_event_gate import probe_device_wake, wait_for_device_wake, D
 BRIDGE="http://127.0.0.1:3080"
 QWEN="http://127.0.0.1:8906"
 PORT=recorder.PORT
+DEFAULT_MOTION_CATALOG=Path(__file__).resolve().parents[1]/"native/macos/CompanionMini/motion-catalog.json"
+FALLBACK_MOTION_CATALOG=Path(__file__).resolve().parents[1]/"app/motion-review/catalog.json"
+DEFAULT_TRIGGER_READBACK=Path.home()/"Library/Application Support/Deepseek-live/companion-native/trigger-readback-result.json"
+
+@lru_cache(maxsize=4)
+def _load_motion_catalog_index(catalog_file:str)->dict[str,dict[str,str]]:
+    path=Path(catalog_file)
+    if not path.is_file():return {}
+    try:
+        data=json.loads(path.read_text(encoding="utf-8"))
+    except (OSError,ValueError):
+        return {}
+    entries=data.get("motions") if isinstance(data,dict) else None
+    if not isinstance(entries,list):return {}
+    index:dict[str,dict[str,str]]={}
+    for entry in entries:
+        if not isinstance(entry,dict):continue
+        ident=entry.get("id")
+        name=entry.get("name")
+        if (isinstance(ident,str) and re.fullmatch(r"m\d{3}",ident)
+            and isinstance(name,str) and name.strip()):
+            role=entry.get("category")
+            index[ident]={"id":ident,"name":name[:100],
+                          "decision":role if isinstance(role,str) and role else "manual"}
+    return index
+
+def _readback_motion_role(motion_id:str,readback_path:Path)->str|None:
+    try:
+        if not readback_path.is_file() or readback_path.is_symlink():
+            return None
+        info=readback_path.stat()
+        if not stat.S_ISREG(info.st_mode) or info.st_size>65_536:
+            return None
+        data=json.loads(readback_path.read_text(encoding="utf-8"))
+    except (OSError,ValueError):
+        return None
+    rules=data.get("rules") if isinstance(data,dict) else None
+    if not isinstance(rules,dict):return None
+    role=rules.get(motion_id)
+    return role if isinstance(role,str) and role in {"boot","tap","idle","bonus","work","drag","manual"} else None
+
+def resolve_physical_motion_item(motion_id:str,native,*,catalog_path:Path|None=None,
+                                 readback_path:Path|None=None)->dict[str,str]|None:
+    """Resolve any ESP32 local motion receipt ID across selected35 and the 106 catalog."""
+    item=next((v for v in native.mapping.values() if v.get("id")==motion_id),None)
+    if item is not None:return item
+    candidates=([catalog_path] if catalog_path is not None
+                else [DEFAULT_MOTION_CATALOG,FALLBACK_MOTION_CATALOG])
+    entry=None
+    for candidate in candidates:
+        if candidate is None:continue
+        loaded=_load_motion_catalog_index(str(candidate))
+        if motion_id in loaded:
+            entry=loaded[motion_id];break
+    if entry is None:return None
+    role=_readback_motion_role(motion_id,readback_path or DEFAULT_TRIGGER_READBACK)
+    return {"id":entry["id"],"name":entry["name"],"decision":role or entry["decision"]}
+
+def apply_physical_frame_receipt(message:str,native,projector,*,out=print,
+                                 catalog_path:Path|None=None,readback_path:Path|None=None)->bool:
+    """Apply verified first-frame ESP32 local touch/idle receipt to Mac preview."""
+    from app.h28_hold_to_talk_capture import VISUAL
+    match=VISUAL.fullmatch(message)
+    if match is None:return False
+    source={'TOUCH':'esp32_physical_touch','IDLE':'esp32_physical_idle'}[match[1]]
+    item=resolve_physical_motion_item(match[2],native,catalog_path=catalog_path,
+                                      readback_path=readback_path)
+    if item is None:return False
+    if item['name'] in native.mapping:
+        native.director.current=item['name']
+    projector.state.update(animation=item['name'],animation_id=item['id'],
+          animation_role=item['decision'],animation_source=source,
+          esp32_frame_verified=True,esp32_frame_motion_id=item['id'])
+    projector.write()
+    out('REAL_ESP32_LOCAL_FRAME '+match[1]+' '+match[2])
+    return True
 def stable_local_conversation_tab_id():
     """One owner-only 32-hex native tab across voice worker restarts.
 
@@ -442,18 +519,7 @@ def single_turn(port,native,*,recog=transcribe_bytes,synth=real_local_pcm,
     def physical_frame_event(message):
         # Only first-frame ESP32-origin local touch/idle receipts may adjust
         # the Mac preview. Never fabricate a DSH fact, tool outcome or model.
-        from app.h28_hold_to_talk_capture import VISUAL
-        match=VISUAL.fullmatch(message)
-        if match is None:return
-        source={'TOUCH':'esp32_physical_touch','IDLE':'esp32_physical_idle'}[match[1]]
-        item=next((v for v in native.mapping.values() if v['id']==match[2]),None)
-        if item is None:return
-        native.director.current=item['name']
-        projector.state.update(animation=item['name'],animation_id=item['id'],
-              animation_role=item['decision'],animation_source=source,
-              esp32_frame_verified=True,esp32_frame_motion_id=item['id'])
-        projector.write()
-        out('REAL_ESP32_LOCAL_FRAME '+match[1]+' '+match[2])
+        apply_physical_frame_receipt(message,native,projector,out=out)
     def device_event(message):
         out(message)
         if message.startswith(("H8_CAPTURE_BEGIN","H28_HOLD_MIC_BEGIN")):

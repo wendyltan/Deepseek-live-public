@@ -75,7 +75,7 @@ bool r268_audio_speaker_write(void *unused,const int16_t *data,size_t count,bool
             const uint32_t peak=(uint32_t)(source<0?-source:source);
             if(peak>block_peak)block_peak=peak;
             if(peak>=32760u)block_clips++;
-            block[j]=(int16_t)((source*3)/4);
+            block[j]=(int16_t)((source*7)/8);
         }
         // Write two RTC metrics ONCE per 20ms block, not per PCM sample.
         // Keep high-priority codec timing out of diagnostic contention.

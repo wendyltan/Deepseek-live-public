@@ -51,7 +51,7 @@ def stabilize_fading_r503(pcm:bytes, *, phrase_index:int) -> tuple[bytes,dict[st
     unchanged.update(early_rms=early,late_rms=late)
     # Do not flatten intentional natural intonation or stable source audio.
     if late*100>=early*70:return pcm,unchanged
-    target=min(3350,max(2550,round(early*.95)))
+    target=min(4350,max(3200,round(early*.95)))
     gains=[]
     for j,level in enumerate(voiced):
         if level<=0:

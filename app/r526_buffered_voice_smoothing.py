@@ -26,10 +26,8 @@ MINI_SAMPLES = 240    # 10ms; gain changes are only a fraction of a percent
 # windows; a 50% step toward 0.64x can sound like a sudden quiet sentence.
 # Keep attenuation-only protection but cap one 200ms change to <8%;
 # avoid ducking normal spoken syllables near 4k RMS.
-# R700: target_rms for long R503 speech is 3300, so expressive vowels/consonants
-# routinely reach 4500-5100 RMS. Raise the duck threshold to 5200 so only true
-# hot bursts are attenuated instead of ducking >50% of normal speech windows.
-START_DUCK_RMS = 5200
+# Leave ordinary R503 speech and emphasis below 6400 RMS untouched.
+START_DUCK_RMS = 6400
 MIN_GAIN = 0.78
 SMOOTH = 0.35
 
