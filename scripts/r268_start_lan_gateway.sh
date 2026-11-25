@@ -21,6 +21,7 @@ fi
 [[ -x "$python" ]] || { echo 'R268 Python missing' >&2; exit 19; }
 [[ -f "$project/scripts/r268_wifi_mac_gateway.py" ]] || exit 21
 export PYTHONNOUSERSITE=1
+export DAFEIYU_WHISPER_SERVER_URL="${DAFEIYU_WHISPER_SERVER_URL:-http://127.0.0.1:8910/inference}"
 if [[ -f "$vendor/websockets/__init__.py" ]]; then
     export PYTHONPATH="$vendor:$project${PYTHONPATH:+:$PYTHONPATH}"
 else

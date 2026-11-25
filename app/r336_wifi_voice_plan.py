@@ -85,6 +85,8 @@ def wifi_buffered_r503_phrases(
     can reduce first-sound wait without changing the text/voice/final PCM.
     Keep original cuts if reducing calls would cut an unfinished word.
     """
+    if len(spoken) <= 110 and spoken.strip():
+        return (spoken,)
     base = base_phrases if base_phrases is not None else wifi_voice_phrases(spoken)
     if ("".join(base) != spoken or len(base) < 3 or
             not 110 <= len(spoken) <= 255):

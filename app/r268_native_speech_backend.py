@@ -758,9 +758,10 @@ class NativeSpeechBackend:
                 raise RuntimeError("voice_cancelled_after_transport")
             if early_tts and bytes(streamed_raw)!=result.pcm:
                 raise ValueError("tts_early_chunk_final_mismatch")
+            tts_ms = (time.monotonic() - tts_start) * 1000
             self._mark("tts_phrase_done", phrase_index=phrase_index,
                        phrase_total=len(phrases),pcm_bytes=len(result.pcm),
-                       tts_ms=int((time.monotonic()-tts_start)*1000),
+                       tts_ms=int(tts_ms),
                        tts_first_pcm_ms=max(0,int(getattr(result,"first_pcm_s",0)*1000)),
                        tts_peak=getattr(result,"peak",0),
                        tts_clipped=getattr(result,"clipped_samples",0))
@@ -876,6 +877,19 @@ class NativeSpeechBackend:
                            if buffered_level is not None else leveler.last_limited_samples_ppm),
                        global_peak_restricted=(0 if early_tts or buffered_level is not None
                                                else int(leveler.last_peak_restricted)))
+            if progressive_r503 and phrase_index == 1 and candidate_r503:
+                rtf = tts_ms / max(before.duration_ms, 1)
+                if before.duration_ms <= 0 or not 0 < rtf < float("inf"):
+                    rtf = 1.35
+                estimated_ms = (
+                    max(before.duration_ms, 1) * rtf
+                    * len(phrases[1]) / max(len(phrase), 1) * 1.25
+                )
+                buffered = after.duration_ms < estimated_ms
+                progressive_r503 = not buffered
+                self._mark("r503_progressive_gate", buffered=int(buffered),
+                           first_audio_ms=after.duration_ms,
+                           next_tts_estimated_ms=round(estimated_ms))
             if not early_tts:total+=len(leveled)
             if (phrase_index>1 and candidate_r503 and (buffered or progressive_r503) and
                     not early_tts):

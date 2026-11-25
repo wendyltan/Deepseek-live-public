@@ -5,6 +5,7 @@ into a temporary mono WAV for whisper-cli and removed even on failure.
 """
 from __future__ import annotations
 
+import http.client
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,8 @@ import subprocess
 import tempfile
 import time
 import wave
+from urllib.parse import urlsplit
+from uuid import uuid4
 
 from app.stt_simplify import to_simplified
 from app.mandarin_asr_context import recover_known_terms
@@ -91,10 +94,61 @@ def _extract_whisper_text(output_json: Path) -> str:
         segment.get("text", "") for segment in data.get("transcription", [])
         if isinstance(segment, dict)
     ).strip()
+    return _clean_text(text)
+
+
+def _clean_text(text: str) -> str:
     for mark in ("[BLANK_AUDIO]", "(无语音)", "[无语音]"):
         if mark in text:
             text = text.replace(mark, "")
     return " ".join(text.split()).strip()
+
+
+def _server_text(wav: Path, *, use_vad: bool, require_vad: bool) -> str | None:
+    configured = os.environ.get("DAFEIYU_WHISPER_SERVER_URL", "").strip()
+    try:
+        endpoint = urlsplit(configured or "http://127.0.0.1:8910/inference")
+        if endpoint.scheme != "http" or endpoint.hostname not in ("127.0.0.1", "::1"):
+            return None
+        connection = http.client.HTTPConnection(
+            endpoint.hostname, endpoint.port, timeout=0.25 if configured else 0.03,
+        )
+        try:
+            connection.connect()
+            connection.sock.settimeout(15)
+            fields = {
+                "language": "zh", "response_format": "json", "temperature": "0.0",
+                "vad": str(use_vad).lower(),
+            }
+            if use_vad:
+                fields.update(
+                    vad_threshold="0.50" if require_vad else "0.42",
+                    vad_min_speech_duration_ms="250" if require_vad else "200",
+                    vad_speech_pad_ms="600",
+                )
+            boundary = uuid4().hex
+            parts = [
+                f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n'.encode()
+                for name, value in fields.items()
+            ]
+            parts.extend([
+                (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; '
+                 'filename="speech.wav"\r\nContent-Type: audio/wav\r\n\r\n').encode(),
+                wav.read_bytes(), f"\r\n--{boundary}--\r\n".encode(),
+            ])
+            connection.request("POST", endpoint.path or "/inference", b"".join(parts), {
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+            })
+            response = connection.getresponse()
+            if response.status == 200:
+                data = json.loads(response.read(65536))
+                if isinstance(data, dict) and isinstance(data.get("text"), str):
+                    return _clean_text(data["text"])
+        finally:
+            connection.close()
+    except (OSError, ValueError, http.client.HTTPException):
+        pass
+    return None
 
 
 def transcribe_bytes(raw: bytes, content_type: str, runtime_root: Path, *, require_vad: bool = False) -> dict:
@@ -103,7 +157,7 @@ def transcribe_bytes(raw: bytes, content_type: str, runtime_root: Path, *, requi
         raise TranscriptionError("录音格式不支持，请使用浏览器提供的音频录制")
     if not raw or len(raw) > MAX_AUDIO_BYTES:
         raise TranscriptionError("录音过大或为空，请缩短录音（每次不超过20秒）")
-    if not WHISPER.is_file() or not FFMPEG.is_file():
+    if not FFMPEG.is_file():
         raise TranscriptionError("本地 Whisper 或 FFmpeg 尚未就绪")
     model_name, model_path = selected_asr_model()
     runtime_root.mkdir(parents=True, exist_ok=True)
@@ -162,29 +216,35 @@ def transcribe_bytes(raw: bytes, content_type: str, runtime_root: Path, *, requi
             use_vad = require_vad or (vad_ready and os.environ.get("DAFEIYU_ASR_VAD", "1") != "0")
             vad_flags = ["--vad", "-vm", str(VAD_MODEL), "-vt", "0.50" if require_vad else "0.42", "-vspd", "200" if not require_vad else "250", "-vp", "600"]
             whisper_start = time.monotonic()
-            try:
-                result = subprocess.run(
-                    base_command + (vad_flags if use_vad else []),
-                    capture_output=True, text=True, timeout=45, check=False,
-                )
-            except subprocess.TimeoutExpired:
-                raise TranscriptionError("本地语音识别超时，请稍后重试") from None
-            output_json = output_path.with_suffix(".json")
-            if result.returncode != 0 or not output_json.is_file():
-                raise TranscriptionError("本地语音识别失败，请稍后重试")
-            data_json = _extract_whisper_text(output_json)
-            text = data_json
-            if not text and use_vad and not require_vad:
+            text = _server_text(wav, use_vad=use_vad, require_vad=require_vad)
+            if text == "" and use_vad and not require_vad:
+                text = _server_text(wav, use_vad=False, require_vad=False)
+            if text is None:
+                if not WHISPER.is_file():
+                    raise TranscriptionError("本地 Whisper 或 FFmpeg 尚未就绪")
                 try:
-                    output_json.unlink(missing_ok=True)
                     result = subprocess.run(
-                        base_command, capture_output=True, text=True, timeout=45, check=False,
+                        base_command + (vad_flags if use_vad else []),
+                        capture_output=True, text=True, timeout=45, check=False,
                     )
                 except subprocess.TimeoutExpired:
                     raise TranscriptionError("本地语音识别超时，请稍后重试") from None
+                output_json = output_path.with_suffix(".json")
                 if result.returncode != 0 or not output_json.is_file():
                     raise TranscriptionError("本地语音识别失败，请稍后重试")
-                text = _extract_whisper_text(output_json)
+                data_json = _extract_whisper_text(output_json)
+                text = data_json
+                if not text and use_vad and not require_vad:
+                    try:
+                        output_json.unlink(missing_ok=True)
+                        result = subprocess.run(
+                            base_command, capture_output=True, text=True, timeout=45, check=False,
+                        )
+                    except subprocess.TimeoutExpired:
+                        raise TranscriptionError("本地语音识别超时，请稍后重试") from None
+                    if result.returncode != 0 or not output_json.is_file():
+                        raise TranscriptionError("本地语音识别失败，请稍后重试")
+                    text = _extract_whisper_text(output_json)
             whisper_ms = round((time.monotonic() - whisper_start) * 1000)
             # whisper.cpp -l zh can still emit Traditional or mixed characters.
             # Normalize after ASR; never modify the stored user's own message.

@@ -1682,11 +1682,12 @@ static void animation_worker(void *unused){
            !h28_touch_return_idle && !h28_touch_requested &&
            !capturing && !speaking && !h10_receiving &&
            h12_req_seq==h12_done_seq &&
-           idle_tick-h28_last_idle_stage_tick>=pdMS_TO_TICKS(600000)){
+           idle_tick-h28_last_idle_stage_tick>=pdMS_TO_TICKS(
+             (75u+((15u+13u*h28_ordinary_count+7u*h28_bonus_count)%31u))*1000u)){
             static const unsigned everyday[]={2,3,10,11};
             static const unsigned bonus[]={61,62,67,83,97,99,105};
             unsigned selected;
-            if(idle_tick-h28_last_bonus_tick>=pdMS_TO_TICKS(900000)){
+            if(idle_tick-h28_last_bonus_tick>=pdMS_TO_TICKS(360000)){
                 unsigned round=h28_bonus_count++;
                 selected=r150_rules_pick(3,round,bonus[round%7]);
                 h28_last_bonus_tick=idle_tick;
